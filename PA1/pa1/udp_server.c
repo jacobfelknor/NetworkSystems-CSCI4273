@@ -13,6 +13,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <linux/limits.h>
+#include <stdbool.h>
 
 #define BUFSIZE 1024
 
@@ -38,6 +39,25 @@ void putFileInBuffer(char *buf, FILE *f)
   fclose(f);
 
   // string[fsize] = 0;
+}
+
+// https://stackoverflow.com/a/15515276
+bool startsWith(const char *a, const char *b)
+{
+  if (strncmp(a, b, strlen(b)) == 0)
+    return 1;
+  return 0;
+}
+
+// https://stackoverflow.com/a/4761840
+size_t chopN(char *str, size_t n)
+{
+  // assert(n != 0 && str != 0);
+  size_t len = strlen(str);
+  if (n > len)
+    n = len;
+  memmove(str, str + n, len - n + 1);
+  return (len - n);
 }
 
 int main(int argc, char **argv)
@@ -123,7 +143,6 @@ int main(int argc, char **argv)
     printf("server received datagram from %s (%s)\n",
            hostp->h_name, hostaddrp);
     printf("server received %d/%d bytes: %s\n", strlen(buf), n, buf);
-
     // Check command that was sent. Respond accordingly
     if (strcmp(buf, "exit\n") == 0)
     {
@@ -145,6 +164,25 @@ int main(int argc, char **argv)
       // {
       //   printf("%s", path);
       // }
+    }
+    else if (startsWith(buf, "delete"))
+    {
+      // remove delete keyword to obtain filename
+      size_t len;
+      len = chopN(buf, strlen("delete") + 1);
+      bzero(buf, BUFSIZE);
+      if (len == 0)
+      {
+        // case where user sends "delete" but no filenames
+        strncpy(buf, "Usage: delete must be followed by a filename", sizeof buf - 1);
+      }
+      else
+      {
+        // delete followed by a string, attempt to delete that file.
+        // check if file exists, return msg if it doesn't
+
+        // file exists, delete it
+      }
     }
 
     /* 
