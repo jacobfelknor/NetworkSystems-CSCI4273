@@ -35,6 +35,11 @@ void putFileInBuffer(char *buf, FILE *f)
   fseek(f, 0, SEEK_SET); /* same as rewind(f); */
 
   // char *string = malloc(fsize + 1);
+  // if (fsize > sizeof buf - 1)
+  // {
+  //   // only fill buffer
+  //   fsize = sizeof buf - 1;
+  // }
   fread(buf, fsize, 1, f);
   fclose(f);
 
@@ -53,11 +58,27 @@ bool startsWith(const char *a, const char *b)
 size_t chopN(char *str, size_t n)
 {
   // assert(n != 0 && str != 0);
+  // char temp[n+1];
+  // memccpy(temp, str, n);
   size_t len = strlen(str);
   if (n > len)
     n = len;
   memmove(str, str + n, len - n + 1);
+  // bzero(str + n - 1, BUFSIZE - n);
   return (len - n);
+}
+
+void captureCmdOutput(char *cmd, char *buf)
+{
+  FILE *fp;
+  int status;
+  char path[PATH_MAX];
+
+  fp = popen(cmd, "r");
+  if (fp == NULL)
+    /* Handle error */;
+  // clear buffer first, then store contents of ls
+  putFileInBuffer(buf, fp);
 }
 
 int main(int argc, char **argv)
@@ -151,15 +172,7 @@ int main(int argc, char **argv)
     }
     else if (strcmp(buf, "ls\n") == 0)
     {
-      FILE *fp;
-      int status;
-      char path[PATH_MAX];
-
-      fp = popen("ls", "r");
-      if (fp == NULL)
-        /* Handle error */;
-      // clear buffer first, then store contents of ls
-      putFileInBuffer(buf, fp);
+      captureCmdOutput("ls", buf);
       // while (fgets(path, PATH_MAX, fp) != NULL)
       // {
       //   printf("%s", path);
@@ -170,7 +183,6 @@ int main(int argc, char **argv)
       // remove delete keyword to obtain filename
       size_t len;
       len = chopN(buf, strlen("delete") + 1);
-      bzero(buf, BUFSIZE);
       if (len == 0)
       {
         // case where user sends "delete" but no filenames
@@ -180,9 +192,10 @@ int main(int argc, char **argv)
       {
         // delete followed by a string, attempt to delete that file.
         // check if file exists, return msg if it doesn't
-
+        printf("%s\n", buf);
         // file exists, delete it
       }
+      // bzero(buf, BUFSIZE);
     }
 
     /* 
