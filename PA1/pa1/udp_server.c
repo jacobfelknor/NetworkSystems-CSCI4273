@@ -54,6 +54,28 @@ bool startsWith(const char *a, const char *b)
   return 0;
 }
 
+// https://stackoverflow.com/a/1488419
+char *strstrip(char *s)
+{
+  size_t size;
+  char *end;
+
+  size = strlen(s);
+
+  if (!size)
+    return s;
+
+  end = s + size - 1;
+  while (end >= s && isspace(*end))
+    end--;
+  *(end + 1) = '\0';
+
+  while (*s && isspace(*s))
+    s++;
+
+  return s;
+}
+
 // https://stackoverflow.com/a/4761840
 size_t chopN(char *str, size_t n)
 {
@@ -165,12 +187,15 @@ int main(int argc, char **argv)
            hostp->h_name, hostaddrp);
     printf("server received %d/%d bytes: %s\n", strlen(buf), n, buf);
     // Check command that was sent. Respond accordingly
-    if (strcmp(buf, "exit\n") == 0)
+    char *stripped;
+    // strip string of leading/trailing spaces
+    stripped = strstrip(buf);
+    if (strcmp(stripped, "exit") == 0)
     {
       bzero(buf, BUFSIZE);
       strncpy(buf, "Goodbye", sizeof buf - 1);
     }
-    else if (strcmp(buf, "ls\n") == 0)
+    else if (strcmp(stripped, "ls") == 0)
     {
       captureCmdOutput("ls", buf);
       // while (fgets(path, PATH_MAX, fp) != NULL)
@@ -178,12 +203,14 @@ int main(int argc, char **argv)
       //   printf("%s", path);
       // }
     }
-    else if (startsWith(buf, "delete"))
+    else if (startsWith(stripped, "delete"))
     {
       // remove delete keyword to obtain filename
       size_t len;
-      len = chopN(buf, strlen("delete") + 1);
-      if (len == 0)
+      len = chopN(stripped, strlen("delete") + 1);
+      // strip string of leading/trailing spaces
+      stripped = strstrip(stripped);
+      if (strlen(stripped) == 0)
       {
         // case where user sends "delete" but no filenames
         strncpy(buf, "Usage: delete must be followed by a filename", sizeof buf - 1);
@@ -191,9 +218,12 @@ int main(int argc, char **argv)
       else
       {
         // delete followed by a string, attempt to delete that file.
-        // check if file exists, return msg if it doesn't
-        printf("%s\n", buf);
+        // TODO: check if file exists, return msg if it doesn't
         // file exists, delete it
+        char *cmd = (char *)malloc(BUFSIZE);
+        // redirect stderr to stdout so that popen will capture it
+        snprintf(cmd, BUFSIZE, "rm -v 2>&1 %s", stripped);
+        captureCmdOutput(cmd, buf);
       }
       // bzero(buf, BUFSIZE);
     }
