@@ -22,10 +22,28 @@ void error(char *msg)
   exit(0);
 }
 
+void send_msg(int sockfd, char *buf, struct sockaddr_in addr)
+{
+  /* 
+     * sendto: echo the input back to the client 
+     */
+  int len;
+  int n;
+  len = strlen(buf);
+
+  n = sendto(sockfd, buf, strlen(buf), 0,
+             (struct sockaddr *)&addr, sizeof(addr));
+  if (n < 0)
+    error("ERROR in sendto");
+}
+
 // https://idiotdeveloper.com/file-transfer-using-udp-socket-in-c/
 void send_file(FILE *fp, char *buf, int sockfd, struct sockaddr_in addr)
 {
   int n; // # of bytes sent at a time
+  bzero(buf, BUFSIZE);
+  strcpy(buf, "START");
+  send_msg(sockfd, buf, addr);
   // clear any data currently in our buffer
   bzero(buf, BUFSIZE);
   while (fgets(buf, BUFSIZE, fp) != NULL)
@@ -41,15 +59,12 @@ void send_file(FILE *fp, char *buf, int sockfd, struct sockaddr_in addr)
   }
 
   // let other side know that we've finished sending data
-  strcpy("END", buf);
-  n = sendto(sockfd, buf, BUFSIZE, 0, (struct sockaddr *)&addr, sizeof(addr));
-  if (n == -1)
-  {
-    error("Error sending 'END' msg");
-  }
+  strcpy(buf, "END");
+  // n = sendto(sockfd, buf, BUFSIZE, 0, (struct sockaddr *)&addr, sizeof(addr));
+  send_msg(sockfd, buf, addr);
+  bzero(buf, BUFSIZE);
   fclose(fp);
 }
-
 // https://idiotdeveloper.com/file-transfer-using-udp-socket-in-c/
 void write_file(int sockfd, char *buf, struct sockaddr_in addr)
 {
@@ -61,7 +76,7 @@ void write_file(int sockfd, char *buf, struct sockaddr_in addr)
   fp = fopen(filename, "w");
 
   // Receiving the data and writing it into the file.
-  bzero(buf, BUFSIZ);
+  bzero(buf, BUFSIZE);
   while (1)
   {
 
@@ -69,12 +84,13 @@ void write_file(int sockfd, char *buf, struct sockaddr_in addr)
 
     if (strcmp(buf, "END") == 0)
     {
+      bzero(buf, BUFSIZE);
       break;
       return;
     }
     // write recieved data to buffer
     fprintf(fp, "%s", buf);
-    bzero(buf, BUFSIZ);
+    bzero(buf, BUFSIZE);
   }
 
   fclose(fp);
@@ -144,6 +160,12 @@ int main(int argc, char **argv)
     {
       printf("\n%s\n", buf);
       exit(0);
+    }
+    else if (strcmp(buf, "START") == 0)
+    {
+      // the server is trying to send us a file!
+      write_file(sockfd, buf, serveraddr);
+      printf("Wrote file to cwd\n");
     }
     else
     {

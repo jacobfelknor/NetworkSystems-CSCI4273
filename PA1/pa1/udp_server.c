@@ -127,27 +127,24 @@ void send_file(FILE *fp, char *buf, int sockfd, struct sockaddr_in addr)
   send_msg(sockfd, buf, addr);
   // clear any data currently in our buffer
   bzero(buf, BUFSIZE);
-  // while (fgets(buf, BUFSIZE, fp) != NULL)
-  // {
-  //   printf("Sending data...");
+  while (fgets(buf, BUFSIZE, fp) != NULL)
+  {
+    printf("Sending data...");
 
-  //   n = sendto(sockfd, buf, BUFSIZE, 0, (struct sockaddr *)&addr, sizeof(addr));
-  //   if (n == -1)
-  //   {
-  //     error("Error in file transfer");
-  //   }
-  //   bzero(buf, BUFSIZE);
-  // }
+    n = sendto(sockfd, buf, BUFSIZE, 0, (struct sockaddr *)&addr, sizeof(addr));
+    if (n == -1)
+    {
+      error("Error in file transfer");
+    }
+    bzero(buf, BUFSIZE);
+  }
 
   // let other side know that we've finished sending data
-  // strcpy(buf, "END");
+  strcpy(buf, "END");
   // n = sendto(sockfd, buf, BUFSIZE, 0, (struct sockaddr *)&addr, sizeof(addr));
-  // if (n == -1)
-  // {
-  //   error("Error sending 'END' msg");
-  // }
-  // send_msg(sockfd, buf, addr);
-  // fclose(fp);
+  send_msg(sockfd, buf, addr);
+  bzero(buf, BUFSIZE);
+  fclose(fp);
 }
 
 // https://idiotdeveloper.com/file-transfer-using-udp-socket-in-c/
@@ -169,6 +166,7 @@ void write_file(int sockfd, char *buf, struct sockaddr_in addr)
 
     if (strcmp(buf, "END") == 0)
     {
+      bzero(buf, BUFSIZE);
       break;
       return;
     }
@@ -322,7 +320,16 @@ int main(int argc, char **argv)
       {
         FILE *fp;
         fp = fopen(stripped, "r");
-        send_file(fp, buf, sockfd, clientaddr);
+        if (fp == NULL)
+        {
+          strcpy(buf, "Error opening specified file. It may not exist on this server");
+          send_msg(sockfd, buf, clientaddr);
+        }
+        else
+        {
+          // file open successful. Send file
+          send_file(fp, buf, sockfd, clientaddr);
+        }
       }
     }
     else
