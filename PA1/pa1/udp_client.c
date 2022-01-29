@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <stdbool.h>
 
 #define BUFSIZE 1024
 
@@ -20,6 +21,50 @@ void error(char *msg)
 {
   perror(msg);
   exit(0);
+}
+
+// https://stackoverflow.com/a/15515276
+bool startsWith(const char *a, const char *b)
+{
+  if (strncmp(a, b, strlen(b)) == 0)
+    return 1;
+  return 0;
+}
+
+// https://stackoverflow.com/a/1488419
+char *strstrip(char *s)
+{
+  size_t size;
+  char *end;
+
+  size = strlen(s);
+
+  if (!size)
+    return s;
+
+  end = s + size - 1;
+  while (end >= s && isspace(*end))
+    end--;
+  *(end + 1) = '\0';
+
+  while (*s && isspace(*s))
+    s++;
+
+  return s;
+}
+
+// https://stackoverflow.com/a/4761840
+size_t chopN(char *str, size_t n)
+{
+  // assert(n != 0 && str != 0);
+  // char temp[n+1];
+  // memccpy(temp, str, n);
+  size_t len = strlen(str);
+  if (n > len)
+    n = len;
+  memmove(str, str + n, len - n + 1);
+  // bzero(str + n - 1, BUFSIZE - n);
+  return (len - n);
 }
 
 void send_msg(int sockfd, char *buf, struct sockaddr_in addr)
@@ -142,12 +187,49 @@ int main(int argc, char **argv)
     bzero(buf, BUFSIZE);
     printf("cmd: ");
     fgets(buf, BUFSIZE, stdin);
-
-    /* send the message to the server */
-    serverlen = sizeof(serveraddr);
-    n = sendto(sockfd, buf, strlen(buf), 0, &serveraddr, serverlen);
-    if (n < 0)
-      error("ERROR in sendto");
+    // Check command that was sent. Respond accordingly
+    char *stripped;
+    // strip string of leading/trailing spaces
+    stripped = strstrip(buf);
+    if (startsWith(stripped, "put"))
+    {
+      // remove delete keyword to obtain filename
+      size_t len;
+      len = chopN(stripped, strlen("put") + 1);
+      // strip string of leading/trailing spaces
+      stripped = strstrip(stripped);
+      if (strlen(stripped) == 0)
+      {
+        // case where user sends "delete" but no filenames
+        printf("Usage: put must be followed by a filename\n");
+        continue;
+      }
+      else
+      {
+        // printf("Filename to put %s\n", stripped);
+        FILE *fp;
+        fp = fopen(stripped, "r");
+        if (fp == NULL)
+        {
+          printf("Error opening specified file. It may not exist on this host\n");
+          continue;
+        }
+        else
+        {
+          // file open successful. Send file
+          send_file(fp, buf, sockfd, serveraddr);
+          continue;
+        }
+      }
+    }
+    else
+    {
+      /* send the message to the server */
+      serverlen = sizeof(serveraddr);
+      n = sendto(sockfd, buf, strlen(buf), 0, &serveraddr, serverlen);
+      if (n < 0)
+        error("ERROR in sendto");
+    }
 
     /* print the server's reply */
     bzero(buf, BUFSIZE);

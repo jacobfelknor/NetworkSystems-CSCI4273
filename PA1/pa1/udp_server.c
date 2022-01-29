@@ -158,7 +158,7 @@ void write_file(int sockfd, char *buf, struct sockaddr_in addr)
   fp = fopen(filename, "w");
 
   // Receiving the data and writing it into the file.
-  bzero(buf, BUFSIZ);
+  bzero(buf, BUFSIZE);
   while (1)
   {
 
@@ -172,7 +172,7 @@ void write_file(int sockfd, char *buf, struct sockaddr_in addr)
     }
     // write recieved data to buffer
     fprintf(fp, "%s", buf);
-    bzero(buf, BUFSIZ);
+    bzero(buf, BUFSIZE);
   }
 
   fclose(fp);
@@ -331,6 +331,12 @@ int main(int argc, char **argv)
           send_file(fp, buf, sockfd, clientaddr);
         }
       }
+    }
+    else if (startsWith(stripped, "START"))
+    {
+      // the client is trying to send us a file!
+      write_file(sockfd, buf, clientaddr);
+      printf("Wrote file to cwd\n");
     }
     else
     {
