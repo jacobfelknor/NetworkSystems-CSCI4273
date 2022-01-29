@@ -46,9 +46,9 @@ void send_file(FILE *fp, char *buf, int sockfd, struct sockaddr_in addr)
   send_msg(sockfd, buf, addr);
   // clear any data currently in our buffer
   bzero(buf, BUFSIZE);
+  printf("Sending data...\n");
   while (fgets(buf, BUFSIZE, fp) != NULL)
   {
-    printf("Sending data...");
 
     n = sendto(sockfd, buf, BUFSIZE, 0, (struct sockaddr *)&addr, sizeof(addr));
     if (n == -1)
@@ -57,7 +57,7 @@ void send_file(FILE *fp, char *buf, int sockfd, struct sockaddr_in addr)
     }
     bzero(buf, BUFSIZE);
   }
-
+  printf("Sent.\n");
   // let other side know that we've finished sending data
   strcpy(buf, "END");
   // n = sendto(sockfd, buf, BUFSIZE, 0, (struct sockaddr *)&addr, sizeof(addr));
