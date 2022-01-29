@@ -290,6 +290,7 @@ int main(int argc, char **argv)
       {
         // case where user sends "delete" but no filenames
         strncpy(buf, "Usage: delete must be followed by a filename", sizeof buf - 1);
+        send_msg(sockfd, buf, clientaddr);
       }
       else
       {
@@ -313,8 +314,9 @@ int main(int argc, char **argv)
       stripped = strstrip(stripped);
       if (strlen(stripped) == 0)
       {
-        // case where user sends "delete" but no filenames
+        // case where user sends "get" but no filenames
         strncpy(buf, "Usage: get must be followed by a filename", sizeof buf - 1);
+        send_msg(sockfd, buf, clientaddr);
       }
       else
       {
@@ -326,7 +328,7 @@ int main(int argc, char **argv)
     else
     {
       // bzero(buf, BUFSIZ);
-      strcpy(buf, "Unrecognized cmd. Options are\n\nget, put, delete, ls, exit\n\nTry again\n");
+      strcpy(buf, "Unrecognized cmd. Options are\n\nget, put, delete, ls, exit\n\nTry again");
       send_msg(sockfd, buf, clientaddr);
     }
 
