@@ -26,6 +26,21 @@ void error(char *msg)
   exit(1);
 }
 
+void send_msg(int sockfd, char *buf, struct sockaddr_in addr)
+{
+  /* 
+     * sendto: echo the input back to the client 
+     */
+  int len;
+  int n;
+  len = strlen(buf);
+
+  n = sendto(sockfd, buf, strlen(buf), 0,
+             (struct sockaddr *)&addr, sizeof(addr));
+  if (n < 0)
+    error("ERROR in sendto");
+}
+
 void putFileInBuffer(char *buf, FILE *f)
 {
   // clear buffer first
@@ -101,6 +116,69 @@ void captureCmdOutput(char *cmd, char *buf)
     /* Handle error */;
   // clear buffer first, then store contents of ls
   putFileInBuffer(buf, fp);
+}
+
+// https://idiotdeveloper.com/file-transfer-using-udp-socket-in-c/
+void send_file(FILE *fp, char *buf, int sockfd, struct sockaddr_in addr)
+{
+  int n; // # of bytes sent at a time
+  bzero(buf, BUFSIZE);
+  strcpy(buf, "START");
+  send_msg(sockfd, buf, addr);
+  // clear any data currently in our buffer
+  bzero(buf, BUFSIZE);
+  // while (fgets(buf, BUFSIZE, fp) != NULL)
+  // {
+  //   printf("Sending data...");
+
+  //   n = sendto(sockfd, buf, BUFSIZE, 0, (struct sockaddr *)&addr, sizeof(addr));
+  //   if (n == -1)
+  //   {
+  //     error("Error in file transfer");
+  //   }
+  //   bzero(buf, BUFSIZE);
+  // }
+
+  // let other side know that we've finished sending data
+  // strcpy(buf, "END");
+  // n = sendto(sockfd, buf, BUFSIZE, 0, (struct sockaddr *)&addr, sizeof(addr));
+  // if (n == -1)
+  // {
+  //   error("Error sending 'END' msg");
+  // }
+  // send_msg(sockfd, buf, addr);
+  // fclose(fp);
+}
+
+// https://idiotdeveloper.com/file-transfer-using-udp-socket-in-c/
+void write_file(int sockfd, char *buf, struct sockaddr_in addr)
+{
+  FILE *fp;
+  char *filename = "test.txt";
+  int n;
+
+  // Creating a file.
+  fp = fopen(filename, "w");
+
+  // Receiving the data and writing it into the file.
+  bzero(buf, BUFSIZ);
+  while (1)
+  {
+
+    n = recvfrom(sockfd, buf, BUFSIZE, 0, (struct sockaddr *)&addr, sizeof(addr));
+
+    if (strcmp(buf, "END") == 0)
+    {
+      break;
+      return;
+    }
+    // write recieved data to buffer
+    fprintf(fp, "%s", buf);
+    bzero(buf, BUFSIZ);
+  }
+
+  fclose(fp);
+  return;
 }
 
 int main(int argc, char **argv)
@@ -194,14 +272,12 @@ int main(int argc, char **argv)
     {
       bzero(buf, BUFSIZE);
       strncpy(buf, "Goodbye", sizeof buf - 1);
+      send_msg(sockfd, buf, clientaddr);
     }
     else if (strcmp(stripped, "ls") == 0)
     {
       captureCmdOutput("ls", buf);
-      // while (fgets(path, PATH_MAX, fp) != NULL)
-      // {
-      //   printf("%s", path);
-      // }
+      send_msg(sockfd, buf, clientaddr);
     }
     else if (startsWith(stripped, "delete"))
     {
@@ -218,25 +294,51 @@ int main(int argc, char **argv)
       else
       {
         // delete followed by a string, attempt to delete that file.
-        // TODO: check if file exists, return msg if it doesn't
         // file exists, delete it
         char *cmd = (char *)malloc(BUFSIZE);
         // redirect stderr to stdout so that popen will capture it
         snprintf(cmd, BUFSIZE, "rm -v 2>&1 %s", stripped);
         captureCmdOutput(cmd, buf);
+        free(cmd);
+        send_msg(sockfd, buf, clientaddr);
       }
       // bzero(buf, BUFSIZE);
     }
+    else if (startsWith(stripped, "get"))
+    {
+      // remove get keyword to obtain filename
+      size_t len;
+      len = chopN(stripped, strlen("get") + 1);
+      // strip string of leading/trailing spaces
+      stripped = strstrip(stripped);
+      if (strlen(stripped) == 0)
+      {
+        // case where user sends "delete" but no filenames
+        strncpy(buf, "Usage: get must be followed by a filename", sizeof buf - 1);
+      }
+      else
+      {
+        FILE *fp;
+        fp = fopen(stripped, "r");
+        send_file(fp, buf, sockfd, clientaddr);
+      }
+    }
+    else
+    {
+      // bzero(buf, BUFSIZ);
+      strcpy(buf, "Unrecognized cmd. Options are\n\nget, put, delete, ls, exit\n\nTry again\n");
+      send_msg(sockfd, buf, clientaddr);
+    }
 
-    /* 
-     * sendto: echo the input back to the client 
-     */
-    int len;
-    len = strlen(buf);
+    //   /*
+    //    * sendto: echo the input back to the client
+    //    */
+    //   int len;
+    //   len = strlen(buf);
 
-    n = sendto(sockfd, buf, strlen(buf), 0,
-               (struct sockaddr *)&clientaddr, clientlen);
-    if (n < 0)
-      error("ERROR in sendto");
+    //   n = sendto(sockfd, buf, strlen(buf), 0,
+    //              (struct sockaddr *)&clientaddr, clientlen);
+    //   if (n < 0)
+    //     error("ERROR in sendto");
   }
 }

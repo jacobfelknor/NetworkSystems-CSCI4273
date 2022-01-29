@@ -22,6 +22,65 @@ void error(char *msg)
   exit(0);
 }
 
+// https://idiotdeveloper.com/file-transfer-using-udp-socket-in-c/
+void send_file(FILE *fp, char *buf, int sockfd, struct sockaddr_in addr)
+{
+  int n; // # of bytes sent at a time
+  // clear any data currently in our buffer
+  bzero(buf, BUFSIZE);
+  while (fgets(buf, BUFSIZE, fp) != NULL)
+  {
+    printf("Sending data...");
+
+    n = sendto(sockfd, buf, BUFSIZE, 0, (struct sockaddr *)&addr, sizeof(addr));
+    if (n == -1)
+    {
+      error("Error in file transfer");
+    }
+    bzero(buf, BUFSIZE);
+  }
+
+  // let other side know that we've finished sending data
+  strcpy("END", buf);
+  n = sendto(sockfd, buf, BUFSIZE, 0, (struct sockaddr *)&addr, sizeof(addr));
+  if (n == -1)
+  {
+    error("Error sending 'END' msg");
+  }
+  fclose(fp);
+}
+
+// https://idiotdeveloper.com/file-transfer-using-udp-socket-in-c/
+void write_file(int sockfd, char *buf, struct sockaddr_in addr)
+{
+  FILE *fp;
+  char *filename = "test.txt";
+  int n;
+
+  // Creating a file.
+  fp = fopen(filename, "w");
+
+  // Receiving the data and writing it into the file.
+  bzero(buf, BUFSIZ);
+  while (1)
+  {
+
+    n = recvfrom(sockfd, buf, BUFSIZE, 0, (struct sockaddr *)&addr, sizeof(addr));
+
+    if (strcmp(buf, "END") == 0)
+    {
+      break;
+      return;
+    }
+    // write recieved data to buffer
+    fprintf(fp, "%s", buf);
+    bzero(buf, BUFSIZ);
+  }
+
+  fclose(fp);
+  return;
+}
+
 int main(int argc, char **argv)
 {
   int sockfd, portno, n;
@@ -80,12 +139,15 @@ int main(int argc, char **argv)
     if (n < 0)
       error("ERROR in recvfrom");
 
-    printf("\n%s\n", buf);
-
     /* Check for goodbye msg */
     if (strcmp(buf, "Goodbye") == 0)
     {
+      printf("\n%s\n", buf);
       exit(0);
+    }
+    else
+    {
+      printf("\n%s\n", buf);
     }
   }
   return 0;
