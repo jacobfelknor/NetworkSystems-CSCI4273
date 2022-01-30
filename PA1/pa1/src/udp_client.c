@@ -118,7 +118,7 @@ int main(int argc, char **argv)
       printf("\n%s\n", buf);
       exit(0);
     }
-    else if (strcmp(buf, "START") == 0)
+    else if (startsWith(buf, "START"))
     {
       // the server is trying to send us a file!
       write_file(sockfd, buf, serveraddr);

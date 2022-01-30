@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include "./constants.h"
 #include "./utils.h"
+#include "./str_utils.h"
 
 // https://idiotdeveloper.com/file-transfer-using-udp-socket-in-c/
 void send_file(FILE *fp, char *buf, int sockfd, struct sockaddr_in addr);

@@ -160,7 +160,7 @@ int main(int argc, char **argv)
       else
       {
         FILE *fp;
-        fp = fopen(stripped, "r");
+        fp = fopen(stripped, "rb");
         if (fp == NULL)
         {
           strcpy(buf, "Error opening specified file. It may not exist on this server");
