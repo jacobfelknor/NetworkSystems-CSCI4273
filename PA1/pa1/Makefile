@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-I.
+CFLAGS=-g
 
 BIN     := bin
 SRC     := src
@@ -14,7 +14,7 @@ clean:
 	rm -f $(BIN)/*
 
 $(BIN)/udp_server: $(SRC)/udp_server.c $(SRC)/str_utils.c $(SRC)/file_transfer.c $(SRC)/utils.c
-	$(CC) -I$(INCLUDE) $^ -o $@
+	$(CC) $(CFLAGS) -I$(INCLUDE) $^ -o $@
 
 $(BIN)/udp_client: $(SRC)/udp_client.c $(SRC)/str_utils.c $(SRC)/file_transfer.c $(SRC)/utils.c
-	$(CC) -I$(INCLUDE) $^ -o $@
+	$(CC) $(CFLAGS) -I$(INCLUDE) $^ -o $@
