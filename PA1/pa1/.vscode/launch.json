@@ -8,12 +8,12 @@
             "name": "Debug Server",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${fileDirname}/${fileBasenameNoExtension}",
+            "program": "${workspaceFolder}/bin/udp_server",
             "args": [
                 "8000"
             ],
             "stopAtEntry": false,
-            "cwd": "${fileDirname}",
+            "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
@@ -24,20 +24,20 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "C/C++: gcc-9 build active file",
+            "preLaunchTask": "build",
             "miDebuggerPath": "/usr/bin/gdb"
         },
         {
             "name": "Debug Client",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${fileDirname}/${fileBasenameNoExtension}",
+            "program": "${workspaceFolder}/bin/udp_client",
             "args": [
                 "localhost",
                 "8000"
             ],
             "stopAtEntry": false,
-            "cwd": "${fileDirname}",
+            "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
@@ -48,8 +48,8 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "C/C++: gcc-9 build active file",
+            "preLaunchTask": "build",
             "miDebuggerPath": "/usr/bin/gdb"
-        }
+        },
     ]
 }
