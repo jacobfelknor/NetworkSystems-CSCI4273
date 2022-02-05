@@ -16,3 +16,5 @@ void send_msg(int sockfd, char *buf, struct sockaddr_in addr);
 void putFileInBuffer(char *buf, FILE *f);
 
 void captureCmdOutput(char *cmd, char *buf);
+
+char *sgets(char *s, int n, const char **strp);

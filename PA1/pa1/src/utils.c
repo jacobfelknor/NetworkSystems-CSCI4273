@@ -48,3 +48,27 @@ void captureCmdOutput(char *cmd, char *buf)
     // clear buffer first, then store contents of ls
     putFileInBuffer(buf, fp);
 }
+
+// https://stackoverflow.com/a/20300544
+// get a line from a buffer
+char *sgets(char *s, int n, const char **strp)
+{
+    if (**strp == '\0')
+        return NULL;
+    int i;
+    for (i = 0; i < n - 1; ++i, ++(*strp))
+    {
+        s[i] = **strp;
+        if (**strp == '\0')
+            break;
+        if (**strp == '\n')
+        {
+            s[i + 1] = '\0';
+            ++(*strp);
+            break;
+        }
+    }
+    if (i == n - 1)
+        s[i] = '\0';
+    return s;
+}

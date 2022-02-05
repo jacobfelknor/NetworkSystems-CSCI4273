@@ -14,6 +14,6 @@
 #include "./str_utils.h"
 
 // https://idiotdeveloper.com/file-transfer-using-udp-socket-in-c/
-void send_file(FILE *fp, char *buf, int sockfd, struct sockaddr_in addr);
+void send_file(FILE *fp, char *filename, char *buf, int sockfd, struct sockaddr_in addr);
 // https://idiotdeveloper.com/file-transfer-using-udp-socket-in-c/
 void write_file(int sockfd, char *buf, struct sockaddr_in addr);

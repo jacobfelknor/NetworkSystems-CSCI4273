@@ -169,7 +169,7 @@ int main(int argc, char **argv)
         else
         {
           // file open successful. Send file
-          send_file(fp, buf, sockfd, clientaddr);
+          send_file(fp, stripped, buf, sockfd, clientaddr);
         }
       }
     }
