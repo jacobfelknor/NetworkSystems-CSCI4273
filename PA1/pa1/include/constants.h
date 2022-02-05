@@ -1,1 +1,1 @@
-#define BUFSIZE 1024
+#define BUFSIZE 1024000

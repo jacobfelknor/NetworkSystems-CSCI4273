@@ -58,8 +58,8 @@ void write_file(int sockfd, char *buf, struct sockaddr_in addr)
 
     while (1)
     {
-
-        n = recvfrom(sockfd, buf, fsize, 0, (struct sockaddr *)&addr, sizeof(addr));
+        socklen_t clilen = sizeof(addr);
+        n = recvfrom(sockfd, buf, BUFSIZE, 0, (struct sockaddr *)&addr, &clilen);
 
         if (strcmp(buf, "END") == 0)
         {
@@ -68,8 +68,11 @@ void write_file(int sockfd, char *buf, struct sockaddr_in addr)
             return;
         }
         // write recieved data to buffer
-        fwrite(buf, fsize, 1, fp);
-        bzero(buf, BUFSIZE);
+        fwrite(buf, n, 1, fp);
+        if (n > 0)
+        {
+            bzero(buf, BUFSIZE);
+        }
     }
 
     fclose(fp);
