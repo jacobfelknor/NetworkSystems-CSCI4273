@@ -13,6 +13,8 @@ void error(char *msg);
 
 void send_msg(int sockfd, char *buf, struct sockaddr_in addr);
 
+void get_msg_timeout(int sockfd, char *buf, struct sockaddr_in addr);
+
 void putFileInBuffer(char *buf, FILE *f);
 
 void captureCmdOutput(char *cmd, char *buf);
