@@ -32,10 +32,6 @@ void send_file(FILE *fp, char *filename, char *buf, int sockfd, struct sockaddr_
         bzero(buf, BUFSIZE);
     }
     printf("Sent.\n");
-    // let other side know that we've finished sending data
-    strcpy(buf, "END");
-    // n = sendto(sockfd, buf, BUFSIZE, 0, (struct sockaddr *)&addr, sizeof(addr));
-    send_msg(sockfd, buf, addr);
     bzero(buf, BUFSIZE);
     fclose(fp);
 }
@@ -56,23 +52,24 @@ void write_file(int sockfd, char *buf, struct sockaddr_in addr)
     // Receiving the data and writing it into the file.
     bzero(buf, BUFSIZE);
 
+    // keep track of bytes recieved so we know when we're done
+    int bytes_recieved = 0;
+
     while (1)
     {
         socklen_t clilen = sizeof(addr);
         n = recvfrom(sockfd, buf, BUFSIZE, 0, (struct sockaddr *)&addr, &clilen);
 
-        if (strcmp(buf, "END") == 0)
-        {
-            bzero(buf, BUFSIZE);
+        // write recieved data to buffer
+        fwrite(buf, n, 1, fp);
+        bytes_recieved = bytes_recieved + n;
+        bzero(buf, BUFSIZE);
+        if(bytes_recieved == fsize){
+            // we reached the end
             break;
             return;
         }
-        // write recieved data to buffer
-        fwrite(buf, n, 1, fp);
-        if (n > 0)
-        {
-            bzero(buf, BUFSIZE);
-        }
+        
     }
 
     fclose(fp);

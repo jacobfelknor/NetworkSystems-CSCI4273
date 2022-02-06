@@ -83,7 +83,7 @@ int main(int argc, char **argv)
       {
         // printf("Filename to put %s\n", stripped);
         FILE *fp;
-        fp = fopen(stripped, "r");
+        fp = fopen(stripped, "rb");
         if (fp == NULL)
         {
           printf("Error opening specified file. It may not exist on this host\n");
