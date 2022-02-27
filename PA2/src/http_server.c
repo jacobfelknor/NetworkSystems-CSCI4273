@@ -101,7 +101,10 @@ int main(int argc, char **argv)
 
     splitRequestString(buf, requestType, requestPath, httpVersion);
 
-    printf("%s\n%s\n%s\n", requestType, requestPath, httpVersion);
+    // TODO: validate these parameters
+
+    // reply to client
+    reply(connfd, requestPath);
 
     // close socket when done
     close(sockfd);
