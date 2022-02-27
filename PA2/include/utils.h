@@ -14,7 +14,7 @@
 
 void error(char *msg);
 
-void reply(int connfd, char *path);
+void reply(int connfd, char *path, char *httpVersion);
 
 void request2buffer(int connfd, char *buf, int bufsize);
 

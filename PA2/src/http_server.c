@@ -102,12 +102,15 @@ int main(int argc, char **argv)
         char requestPath[260]; // e.g. /some/dir/page.html
         char httpVersion[20];  // e.g. HTTP/1.1
 
-        splitRequestString(buf, requestType, requestPath, httpVersion);
+        const char *root = "./www"; // our document root relative path
+        strcpy(requestPath, root);  // prepend our root to this string.
+        splitRequestString(buf, requestType, requestPath + strlen(root), httpVersion);
 
         // TODO: validate these parameters
+        printf("%s\n%s\n%s\n", requestType, requestPath, httpVersion);
 
         // reply to client
-        reply(connfd, requestPath);
+        reply(connfd, requestPath, httpVersion);
     }
 
     // close socket when done

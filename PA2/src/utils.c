@@ -6,7 +6,7 @@
 void error(char *msg)
 {
     perror(msg);
-    exit(0);
+    exit(1);
 }
 
 long getFileSize(FILE *f)
@@ -41,7 +41,7 @@ void request2buffer(int connfd, char *buf, int bufsize)
 }
 
 // send the client back a copy of the file specified at path
-void reply(int connfd, char *path)
+void reply(int connfd, char *path, char *httpVersion)
 {
     // create a buffer to store the file
     char *fileBuffer = (char *)malloc(RESPONSE_FILE_BUFFER);
@@ -52,7 +52,7 @@ void reply(int connfd, char *path)
 
     // open the given filepath and put into the buffer
     FILE *fp;
-    fp = fopen("/home/jacob2/Development/NetworkSystems-CSCI4273/PA2/www/simple.html", "r");
+    fp = fopen(path, "r");
     if (fp == NULL)
     {
         error("SHOULD RETURN A 404 HERE!!");
@@ -64,7 +64,7 @@ void reply(int connfd, char *path)
     putFileInBuffer(fileBuffer, RESPONSE_FILE_BUFFER, fp);
 
     // start to build response
-    char *httpVersion = "HTTP/1.1";
+    // char *httpVersion = "HTTP/1.1";
     char *statusCode = "200 OK";
     char *contentType = "text/html";
     long contentLength = fileSize;
@@ -92,4 +92,6 @@ void reply(int connfd, char *path)
     // write buffer to the client
     write(connfd, responseBuffer, RESPONSE_BUFFER_SIZE);
     fclose(fp);
+    free(fileBuffer);
+    free(responseBuffer);
 }
