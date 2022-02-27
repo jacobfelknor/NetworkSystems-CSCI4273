@@ -75,36 +75,40 @@ int main(int argc, char **argv)
      * Some code adapted from geeksforgeeks.org/tcp-server-client-implementation-in-c/
      */
 
-    if ((listen(sockfd, 5)) != 0)
+    while (1)
     {
-        error("Listen failed...\n");
+
+        if ((listen(sockfd, 5)) != 0)
+        {
+            error("Listen failed...\n");
+        }
+        else
+            printf("got request..\n");
+
+        // Accept the data packet from client and verification
+        connfd = accept(sockfd, (struct sockaddr *)&clientaddr, &clientlen);
+        if (connfd < 0)
+        {
+            error("server accept failed...\n");
+        }
+        else
+            printf("connection successfull...\n");
+
+        // copy request string into our buffer
+        request2buffer(connfd, buf, BUFSIZ);
+
+        // parse first line of request for our 3 main substrings (with conservatively long buffers...)
+        char requestType[20];  // e.g. GET, POST, etc
+        char requestPath[260]; // e.g. /some/dir/page.html
+        char httpVersion[20];  // e.g. HTTP/1.1
+
+        splitRequestString(buf, requestType, requestPath, httpVersion);
+
+        // TODO: validate these parameters
+
+        // reply to client
+        reply(connfd, requestPath);
     }
-    else
-        printf("Server listening..\n");
-
-    // Accept the data packet from client and verification
-    connfd = accept(sockfd, (struct sockaddr *)&clientaddr, &clientlen);
-    if (connfd < 0)
-    {
-        error("server accept failed...\n");
-    }
-    else
-        printf("accepted connection...\n");
-
-    // copy request string into our buffer
-    request2buffer(connfd, buf, BUFSIZ);
-
-    // parse first line of request for our 3 main substrings (with conservatively long buffers...)
-    char requestType[20];  // e.g. GET, POST, etc
-    char requestPath[260]; // e.g. /some/dir/page.html
-    char httpVersion[20];  // e.g. HTTP/1.1
-
-    splitRequestString(buf, requestType, requestPath, httpVersion);
-
-    // TODO: validate these parameters
-
-    // reply to client
-    reply(connfd, requestPath);
 
     // close socket when done
     close(sockfd);
