@@ -58,4 +58,5 @@ void splitRequestString(char *request, char *requestType, char *requestPath, cha
 
     // at this point, replace the newline if it exists from the httpVersion
     httpVersion[strcspn(httpVersion, "\n")] = 0;
+    httpVersion[strcspn(httpVersion, "\r")] = 0;
 }

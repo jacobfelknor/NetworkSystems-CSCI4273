@@ -98,6 +98,20 @@ void request2buffer(int connfd, char *buf, int bufsize)
     read(connfd, buf, bufsize);
 }
 
+// build a response with the specified information
+void buildResponse(char *responseBuffer, char *httpVersion, char *statusCode, char *contentType, long contentLength)
+{
+    snprintf(responseBuffer, RESPONSE_BUFFER_SIZE,
+             "%s %s\r\nContent-Type: %s\r\nContent-Length: %ld\r\n\r\n",
+             httpVersion, statusCode, contentType, contentLength);
+}
+
+// send the response
+void sendResponse(int connfd, char *responseBuffer)
+{
+    write(connfd, responseBuffer, RESPONSE_BUFFER_SIZE);
+}
+
 // send the client back a copy of the file specified at path
 void reply(int connfd, char *path, char *httpVersion)
 {
@@ -113,42 +127,40 @@ void reply(int connfd, char *path, char *httpVersion)
     fp = fopen(path, "r");
     if (fp == NULL)
     {
-        error("SHOULD RETURN A 404 HERE!!");
+        buildResponse(responseBuffer, httpVersion, "404 Not Found", "", 0);
     }
     else
     {
         fileSize = getFileSize(fp);
-    }
-    putFileInBuffer(fileBuffer, RESPONSE_FILE_BUFFER, fp);
+        putFileInBuffer(fileBuffer, RESPONSE_FILE_BUFFER, fp);
 
-    // start to build response
-    char *statusCode = "200 OK";
-    char *contentType = getContentType(path);
-    long contentLength = fileSize;
+        // start to build response
+        char *statusCode = "200 OK";
+        char *contentType = getContentType(path);
+        long contentLength = fileSize;
 
-    snprintf(responseBuffer, RESPONSE_BUFFER_SIZE,
-             "%s %s\r\nContent-Type: %s\r\nContent-Length: %ld\r\n\r\n",
-             httpVersion, statusCode, contentType, contentLength);
+        buildResponse(responseBuffer, httpVersion, statusCode, contentType, contentLength);
 
-    // get position in response buffer to put file
-    int currlen = strlen(responseBuffer);
-    // validate we can fit file buffer in response buffer
-    if (currlen + fileSize > RESPONSE_BUFFER_SIZE)
-    {
-        error("response buffer is too small");
-    }
-    else
-    {
-        // copy file into responseBuffer
-        for (int i = 0; i < fileSize; i++)
+        // get position in response buffer to put file
+        int currlen = strlen(responseBuffer);
+        // validate we can fit file buffer in response buffer
+        if (currlen + fileSize > RESPONSE_BUFFER_SIZE)
         {
-            responseBuffer[i + currlen] = fileBuffer[i];
+            error("response buffer is too small");
         }
+        else
+        {
+            // copy file into responseBuffer
+            for (int i = 0; i < fileSize; i++)
+            {
+                responseBuffer[i + currlen] = fileBuffer[i];
+            }
+        }
+        fclose(fp);
     }
 
     // write buffer to the client
-    write(connfd, responseBuffer, RESPONSE_BUFFER_SIZE);
-    fclose(fp);
+    sendResponse(connfd, responseBuffer);
     free(fileBuffer);
     free(responseBuffer);
 }
