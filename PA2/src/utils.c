@@ -17,6 +17,64 @@ long getFileSize(FILE *f)
     return fsize;
 }
 
+char *getFileExtension(char *path)
+{
+    // adapted from https://stackoverflow.com/a/5309514
+    char *ext;
+    ext = strrchr(path, '.');
+    if (!ext)
+    {
+        return "";
+    }
+    else
+    {
+        return ext;
+    }
+}
+
+char *getContentType(char *path)
+{
+    char *ext = getFileExtension(path);
+
+    if (strcmp(ext, ".html") == 0)
+    {
+        return "text/html";
+    }
+    else if (strcmp(ext, ".txt") == 0)
+    {
+        return "text/plain";
+    }
+    else if (strcmp(ext, ".png") == 0)
+    {
+        return "image/png";
+    }
+    else if (strcmp(ext, ".gif") == 0)
+    {
+        return "image/gif";
+    }
+    else if (strcmp(ext, ".jpg") == 0)
+    {
+        return "image/jpg";
+    }
+    else if (strcmp(ext, ".css") == 0)
+    {
+        return "text/css";
+    }
+    else if (strcmp(ext, ".js") == 0)
+    {
+        return "application/javascript";
+    }
+    else if (strcmp(ext, ".ico") == 0)
+    {
+        return "image/ico";
+    }
+    else
+    {
+        // let the browser guess
+        return "";
+    }
+}
+
 void putFileInBuffer(char *buf, int bufsize, FILE *f)
 {
     // clear buffer first
@@ -64,9 +122,8 @@ void reply(int connfd, char *path, char *httpVersion)
     putFileInBuffer(fileBuffer, RESPONSE_FILE_BUFFER, fp);
 
     // start to build response
-    // char *httpVersion = "HTTP/1.1";
     char *statusCode = "200 OK";
-    char *contentType = "text/html";
+    char *contentType = getContentType(path);
     long contentLength = fileSize;
 
     snprintf(responseBuffer, RESPONSE_BUFFER_SIZE,
