@@ -29,9 +29,6 @@ void putFileInBuffer(char *buf, int bufsize, FILE *f)
     }
 
     fread(buf, fsize, 1, f);
-    fclose(f);
-
-    // string[fsize] = 0;
 }
 
 // copy the web request string into the given buffer
