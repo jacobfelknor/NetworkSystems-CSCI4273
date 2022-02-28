@@ -105,12 +105,11 @@ int main(int argc, char **argv)
         const char *root = "./www"; // our document root relative path
         strcpy(requestPath, root);  // prepend our root to this string.
         splitRequestString(buf, requestType, requestPath + strlen(root), httpVersion);
-
-        // TODO: validate these parameters
-        printf("%s\n%s\n%s\n", requestType, requestPath, httpVersion);
+        // print()
+        printf("   %s\n   %s\n   %s\n", requestType, requestPath, httpVersion);
 
         // reply to client
-        reply(connfd, requestPath, httpVersion);
+        reply(connfd, requestPath, requestType, httpVersion);
     }
 
     // close socket when done

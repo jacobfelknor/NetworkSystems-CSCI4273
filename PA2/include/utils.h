@@ -14,7 +14,7 @@
 
 void error(char *msg);
 
-void reply(int connfd, char *path, char *httpVersion);
+void reply(int connfd, char *path, char *requestType, char *httpVersion);
 
 void request2buffer(int connfd, char *buf, int bufsize);
 
@@ -25,6 +25,12 @@ long getFileSize(FILE *f);
 char *getFileExtension(char *path);
 
 char *getContentType(char *path);
+
+void sendResponse(int connfd, char *responseBuffer);
+
+void buildResponse(char *responseBuffer, char *httpVersion, char *statusCode, char *contentType, long contentLength);
+
+void appendContent(char *responseBuffer, char *fileBuffer, long fileSize);
 
 // void send_msg(int sockfd, char *buf, struct sockaddr_in addr);
 

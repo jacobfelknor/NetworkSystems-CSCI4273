@@ -112,22 +112,51 @@ void sendResponse(int connfd, char *responseBuffer)
     write(connfd, responseBuffer, RESPONSE_BUFFER_SIZE);
 }
 
+// put content in the response buff
+void appendContent(char *responseBuffer, char *fileBuffer, long fileSize)
+{
+    // get position in response buffer to put file
+    int currlen = strlen(responseBuffer);
+    // validate we can fit file buffer in response buffer
+    if (currlen + fileSize > RESPONSE_BUFFER_SIZE)
+    {
+        error("response buffer is too small");
+    }
+    else
+    {
+        // copy file into responseBuffer
+        for (int i = 0; i < fileSize; i++)
+        {
+            responseBuffer[i + currlen] = fileBuffer[i];
+        }
+    }
+}
+
 // send the client back a copy of the file specified at path
-void reply(int connfd, char *path, char *httpVersion)
+void reply(int connfd, char *path, char *requestType, char *httpVersion)
 {
     // create a buffer to store the file
     char *fileBuffer = (char *)malloc(RESPONSE_FILE_BUFFER);
     char *responseBuffer = (char *)malloc(RESPONSE_BUFFER_SIZE);
     bzero(fileBuffer, RESPONSE_FILE_BUFFER);
     bzero(responseBuffer, RESPONSE_BUFFER_SIZE);
-    int fileSize;
+    long fileSize;
 
     // open the given filepath and put into the buffer
     FILE *fp;
     fp = fopen(path, "r");
-    if (fp == NULL)
+
+    if (!(strcmp(httpVersion, "HTTP/1.1") == 0 || strcmp(httpVersion, "HTTP/1.0") == 0))
     {
-        buildResponse(responseBuffer, httpVersion, "404 Not Found", "", 0);
+        buildResponse(responseBuffer, httpVersion, "505 HTTP Version Not Supported", "text/html", 0);
+    }
+    else if (strcmp(requestType, "GET") != 0)
+    {
+        buildResponse(responseBuffer, httpVersion, "405 Method Not Allowed", "text/html", 0);
+    }
+    else if (fp == NULL)
+    {
+        buildResponse(responseBuffer, httpVersion, "404 Not Found", "text/html", 0);
     }
     else
     {
@@ -140,22 +169,7 @@ void reply(int connfd, char *path, char *httpVersion)
         long contentLength = fileSize;
 
         buildResponse(responseBuffer, httpVersion, statusCode, contentType, contentLength);
-
-        // get position in response buffer to put file
-        int currlen = strlen(responseBuffer);
-        // validate we can fit file buffer in response buffer
-        if (currlen + fileSize > RESPONSE_BUFFER_SIZE)
-        {
-            error("response buffer is too small");
-        }
-        else
-        {
-            // copy file into responseBuffer
-            for (int i = 0; i < fileSize; i++)
-            {
-                responseBuffer[i + currlen] = fileBuffer[i];
-            }
-        }
+        appendContent(responseBuffer, fileBuffer, fileSize);
         fclose(fp);
     }
 
