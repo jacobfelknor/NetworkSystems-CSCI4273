@@ -1,4 +1,5 @@
 #include "../include/utils.h"
+#include "../include/str_utils.h"
 
 /*
  * error - wrapper for perror
@@ -132,6 +133,22 @@ void appendContent(char *responseBuffer, char *fileBuffer, long fileSize)
     }
 }
 
+// validate the 3 inputs COULD be valid...
+bool validateRequestParams(char *requestPath, char *requestMethod, char *httpVersion)
+{
+    if (!(strlen(requestPath) && strlen(requestMethod) && strlen(httpVersion)))
+    {
+        return false;
+    }
+
+    if (!startsWith(httpVersion, "HTTP/1."))
+    {
+        return false;
+    }
+
+    return true;
+}
+
 // send the client back a copy of the file specified at path
 void reply(int connfd, char *requestPath, char *requestMethod, char *httpVersion)
 {
@@ -146,7 +163,11 @@ void reply(int connfd, char *requestPath, char *requestMethod, char *httpVersion
     FILE *fp;
     fp = fopen(requestPath, "r");
 
-    if (!(strcmp(httpVersion, "HTTP/1.1") == 0 || strcmp(httpVersion, "HTTP/1.0") == 0))
+    if (!validateRequestParams(requestPath, requestMethod, httpVersion))
+    {
+        buildResponse(responseBuffer, "HTTP/1.1", "400 Bad Request", "text/html", 0);
+    }
+    else if (!(strcmp(httpVersion, "HTTP/1.1") == 0 || strcmp(httpVersion, "HTTP/1.0") == 0) && startsWith(httpVersion, "HTTP"))
     {
         buildResponse(responseBuffer, httpVersion, "505 HTTP Version Not Supported", "text/html", 0);
     }

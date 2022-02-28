@@ -1,5 +1,13 @@
 #include "../include/str_utils.h"
 
+// https://stackoverflow.com/a/15515276
+bool startsWith(const char *a, const char *b)
+{
+    if (strncmp(a, b, strlen(b)) == 0)
+        return 1;
+    return 0;
+}
+
 // https://stackoverflow.com/a/20300544
 // get a line from a buffer
 char *sgets(char *s, int n, char **strp)
