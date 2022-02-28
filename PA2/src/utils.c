@@ -133,7 +133,7 @@ void appendContent(char *responseBuffer, char *fileBuffer, long fileSize)
 }
 
 // send the client back a copy of the file specified at path
-void reply(int connfd, char *path, char *requestType, char *httpVersion)
+void reply(int connfd, char *requestPath, char *requestMethod, char *httpVersion)
 {
     // create a buffer to store the file
     char *fileBuffer = (char *)malloc(RESPONSE_FILE_BUFFER);
@@ -144,13 +144,13 @@ void reply(int connfd, char *path, char *requestType, char *httpVersion)
 
     // open the given filepath and put into the buffer
     FILE *fp;
-    fp = fopen(path, "r");
+    fp = fopen(requestPath, "r");
 
     if (!(strcmp(httpVersion, "HTTP/1.1") == 0 || strcmp(httpVersion, "HTTP/1.0") == 0))
     {
         buildResponse(responseBuffer, httpVersion, "505 HTTP Version Not Supported", "text/html", 0);
     }
-    else if (strcmp(requestType, "GET") != 0)
+    else if (strcmp(requestMethod, "GET") != 0)
     {
         buildResponse(responseBuffer, httpVersion, "405 Method Not Allowed", "text/html", 0);
     }
@@ -165,7 +165,7 @@ void reply(int connfd, char *path, char *requestType, char *httpVersion)
 
         // start to build response
         char *statusCode = "200 OK";
-        char *contentType = getContentType(path);
+        char *contentType = getContentType(requestPath);
         long contentLength = fileSize;
 
         buildResponse(responseBuffer, httpVersion, statusCode, contentType, contentLength);

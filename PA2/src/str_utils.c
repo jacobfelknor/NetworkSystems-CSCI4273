@@ -24,14 +24,14 @@ char *sgets(char *s, int n, char **strp)
     return s;
 }
 
-void splitRequestString(char *request, char *requestType, char *requestPath, char *httpVersion)
+void splitRequestString(char *request, char *requestMethod, char *requestPath, char *httpVersion)
 {
     // For these 3 pieces of information, only the first line is required.
     int lineSize = 300;
     char firstLine[lineSize]; // should be plenty long
     sgets(firstLine, lineSize, &request);
 
-    char *parts[] = {requestType, requestPath, httpVersion};
+    char *parts[] = {requestMethod, requestPath, httpVersion};
     int part = 0;
     int j = 0;
     // split string into parts by space

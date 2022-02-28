@@ -98,18 +98,18 @@ int main(int argc, char **argv)
         request2buffer(connfd, buf, BUFSIZ);
 
         // parse first line of request for our 3 main substrings (with conservatively long buffers...)
-        char requestType[20];  // e.g. GET, POST, etc
-        char requestPath[260]; // e.g. /some/dir/page.html
-        char httpVersion[20];  // e.g. HTTP/1.1
+        char requestMethod[20]; // e.g. GET, POST, etc
+        char requestPath[260];  // e.g. /some/dir/page.html
+        char httpVersion[20];   // e.g. HTTP/1.1
 
         const char *root = "./www"; // our document root relative path
         strcpy(requestPath, root);  // prepend our root to this string.
-        splitRequestString(buf, requestType, requestPath + strlen(root), httpVersion);
+        splitRequestString(buf, requestMethod, requestPath + strlen(root), httpVersion);
         // print()
-        printf("   %s\n   %s\n   %s\n", requestType, requestPath, httpVersion);
+        printf("   %s\n   %s\n   %s\n", requestMethod, requestPath, httpVersion);
 
         // reply to client
-        reply(connfd, requestPath, requestType, httpVersion);
+        reply(connfd, requestPath, requestMethod, httpVersion);
     }
 
     // close socket when done
