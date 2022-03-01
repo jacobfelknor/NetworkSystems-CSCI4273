@@ -167,7 +167,7 @@ void reply(int connfd, char *requestPath, char *requestMethod, char *httpVersion
     {
         buildResponse(responseBuffer, "HTTP/1.1", "400 Bad Request", "text/html", 0);
     }
-    else if (!(strcmp(httpVersion, "HTTP/1.1") == 0 || strcmp(httpVersion, "HTTP/1.0") == 0) && startsWith(httpVersion, "HTTP"))
+    else if (!(strcmp(httpVersion, "HTTP/1.1") == 0 || strcmp(httpVersion, "HTTP/1.0") == 0))
     {
         buildResponse(responseBuffer, httpVersion, "505 HTTP Version Not Supported", "text/html", 0);
     }
