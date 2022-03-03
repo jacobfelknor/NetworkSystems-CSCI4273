@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 #include <linux/limits.h>
 #include <stdbool.h>
+#include <sys/wait.h>
 
 #include "../include/utils.h"
 #include "../include/str_utils.h"
@@ -75,15 +76,17 @@ int main(int argc, char **argv)
      * Some code adapted from geeksforgeeks.org/tcp-server-client-implementation-in-c/
      */
 
+    if ((listen(sockfd, 5)) != 0)
+    {
+        error("Listen failed...\n");
+    }
+    else
+        printf("got request..\n");
+
+    int pid;
+
     while (1)
     {
-
-        if ((listen(sockfd, 5)) != 0)
-        {
-            error("Listen failed...\n");
-        }
-        else
-            printf("got request..\n");
 
         // Accept the data packet from client and verification
         connfd = accept(sockfd, (struct sockaddr *)&clientaddr, &clientlen);
@@ -94,24 +97,42 @@ int main(int argc, char **argv)
         else
             printf("connection successfull...\n");
 
-        // copy request string into our buffer
-        request2buffer(connfd, buf, BUFSIZ);
+        if ((pid = fork()) == -1)
+        {
+            close(connfd);
+            continue;
+        }
+        else if (pid > 0)
+        {
+            // I'm the parent
+            close(connfd);            // child owns this connection now
+            signal(SIGCHLD, SIG_IGN); // ignore child's signal, reap automatically
+            continue;
+        }
+        else if (pid == 0)
+        {
+            // I'm the child. Service the request
 
-        // parse first line of request for our 3 main substrings (with conservatively long buffers...)
-        char requestMethod[20]; // e.g. GET, POST, etc
-        char requestPath[260];  // e.g. /some/dir/page.html
-        char httpVersion[20];   // e.g. HTTP/1.1
+            // copy request string into our buffer
+            request2buffer(connfd, buf, BUFSIZ);
 
-        const char *root = "./www"; // our document root relative path
-        strcpy(requestPath, root);  // prepend our root to this string.
-        splitRequestString(buf, requestMethod, requestPath + strlen(root), httpVersion);
-        // print()
-        printf("   %s\n   %s\n   %s\n", requestMethod, requestPath, httpVersion);
+            // parse first line of request for our 3 main substrings (with conservatively long buffers...)
+            char requestMethod[20]; // e.g. GET, POST, etc
+            char requestPath[260];  // e.g. /some/dir/page.html
+            char httpVersion[20];   // e.g. HTTP/1.1
 
-        // reply to client
-        reply(connfd, requestPath, requestMethod, httpVersion);
+            const char *root = "./www"; // our document root relative path
+            strcpy(requestPath, root);  // prepend our root to this string.
+            splitRequestString(buf, requestMethod, requestPath + strlen(root), httpVersion);
+            // print()
+            printf("   %s\n   %s\n   %s\n", requestMethod, requestPath, httpVersion);
+
+            // reply to client
+            reply(connfd, requestPath, requestMethod, httpVersion);
+            // close socket when done
+            close(sockfd);
+
+            break; // break out of the infinite loop and exit
+        }
     }
-
-    // close socket when done
-    close(sockfd);
 }
