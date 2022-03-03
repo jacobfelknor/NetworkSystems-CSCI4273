@@ -12,4 +12,3 @@ Usage:
 Assumptions:
     assuming that there is a directory ./www/ in the cwd wherever the server is being ran
     so, if running ./bin/server from the root of this project, there must exist a ./www/
-    
