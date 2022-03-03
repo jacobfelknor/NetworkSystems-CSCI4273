@@ -1,6 +1,8 @@
 #include "../include/utils.h"
 #include "../include/str_utils.h"
 
+extern int errno;
+
 /*
  * error - wrapper for perror
  */
@@ -212,7 +214,16 @@ void reply(int connfd, char *requestPath, char *requestMethod, char *httpVersion
     }
     else if (fp == NULL)
     {
-        buildResponse(responseBuffer, httpVersion, "404 Not Found", "text/html", 0);
+        if (errno == ENOENT)
+        {
+            // ENOENT: No such file or directory
+            buildResponse(responseBuffer, httpVersion, "404 Not Found", "text/html", 0);
+        }
+        else if (errno == EACCES)
+        {
+            // EACCES: Insufficient permissions to open the file
+            buildResponse(responseBuffer, httpVersion, "403 Forbidden", "text/html", 0);
+        }
     }
     else
     {

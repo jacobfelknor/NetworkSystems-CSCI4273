@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <linux/limits.h>
 #include <sys/stat.h>
+#include <errno.h>
 
 #define RESPONSE_FILE_BUFFER 1049000
 #define RESPONSE_BUFFER_SIZE RESPONSE_FILE_BUFFER + 100
@@ -34,11 +35,3 @@ void sendResponse(int connfd, char *responseBuffer);
 void buildResponse(char *responseBuffer, char *httpVersion, char *statusCode, char *contentType, long contentLength);
 
 void appendContent(char *responseBuffer, char *fileBuffer, long fileSize);
-
-// void send_msg(int sockfd, char *buf, struct sockaddr_in addr);
-
-// void get_msg_timeout(int sockfd, char *buf, struct sockaddr_in addr);
-
-// void captureCmdOutput(char *cmd, char *buf);
-
-// char *sgets(char *s, int n, const char **strp);
