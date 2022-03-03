@@ -8,6 +8,7 @@
 #include <netdb.h>
 #include <stdbool.h>
 #include <linux/limits.h>
+#include <sys/stat.h>
 
 #define RESPONSE_FILE_BUFFER 1049000
 #define RESPONSE_BUFFER_SIZE RESPONSE_FILE_BUFFER + 100
@@ -21,6 +22,8 @@ void request2buffer(int connfd, char *buf, int bufsize);
 void putFileInBuffer(char *buf, int bufsize, FILE *f);
 
 long getFileSize(FILE *f);
+
+int isDirectory(const char *path);
 
 char *getFileExtension(char *path);
 

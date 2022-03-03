@@ -18,6 +18,15 @@ long getFileSize(FILE *f)
     return fsize;
 }
 
+// https://stackoverflow.com/a/4553053
+int isDirectory(const char *path)
+{
+    struct stat statbuf;
+    if (stat(path, &statbuf) != 0)
+        return 0;
+    return S_ISDIR(statbuf.st_mode);
+}
+
 char *getFileExtension(char *path)
 {
     // adapted from https://stackoverflow.com/a/5309514
@@ -161,7 +170,45 @@ void reply(int connfd, char *requestPath, char *requestMethod, char *httpVersion
 
     // open the given filepath and put into the buffer
     FILE *fp;
-    fp = fopen(requestPath, "r");
+    if (!isDirectory(requestPath))
+    {
+        // not a directory, just attempt to open the file
+        fp = fopen(requestPath, "r");
+    }
+    else
+    {
+        // this is a directory. Need to look for an index.html here
+        int pathLength = strlen(requestPath);
+        char *indexHTML;
+        if (requestPath[pathLength - 1] == '/') // pathLength - 1 because of null terminator
+        {
+            // did the request path end in a slash?
+            indexHTML = "index.html";
+        }
+        else
+        {
+            indexHTML = "/index.html";
+        }
+        int indexHTMLlength = strlen(indexHTML);
+
+        char newRequestPath[pathLength + indexHTMLlength + 1];
+        newRequestPath[pathLength + indexHTMLlength] = '\0'; // add null terminator
+        int j = 0;
+        for (int i = 0; i < (pathLength); i++)
+        {
+            // fill in the given requestPath
+            newRequestPath[j] = requestPath[i];
+            j++;
+        }
+        for (int i = 0; i < (indexHTMLlength); i++)
+        {
+            // add either index.html or /index.html
+            newRequestPath[j] = indexHTML[i];
+            j++;
+        }
+        printf("Requested a directory, looking now at %s\n", newRequestPath);
+        fp = fopen(newRequestPath, "r");
+    }
 
     if (!validateRequestParams(requestPath, requestMethod, httpVersion))
     {
