@@ -167,7 +167,7 @@ void reply(int connfd, char *requestPath, char *requestMethod, char *httpVersion
     bzero(fileBuffer, RESPONSE_FILE_BUFFER);
     bzero(responseBuffer, RESPONSE_BUFFER_SIZE);
     long fileSize;
-
+    bool pathMallocd = false;
     // open the given filepath and put into the buffer
     FILE *fp;
     if (!isDirectory(requestPath))
@@ -189,24 +189,12 @@ void reply(int connfd, char *requestPath, char *requestMethod, char *httpVersion
         {
             indexHTML = "/index.html";
         }
-        int indexHTMLlength = strlen(indexHTML);
 
-        char newRequestPath[pathLength + indexHTMLlength + 1];
-        newRequestPath[pathLength + indexHTMLlength] = '\0'; // add null terminator
-        int j = 0;
-        for (int i = 0; i < (pathLength); i++)
-        {
-            // fill in the given requestPath
-            newRequestPath[j] = requestPath[i];
-            j++;
-        }
-        for (int i = 0; i < (indexHTMLlength); i++)
-        {
-            // add either index.html or /index.html
-            newRequestPath[j] = indexHTML[i];
-            j++;
-        }
+        char *newRequestPath = strConcat(requestPath, indexHTML);
+
         printf("Requested a directory, looking now at %s\n", newRequestPath);
+        requestPath = newRequestPath;
+        pathMallocd = true;
         fp = fopen(newRequestPath, "r");
     }
 
@@ -245,4 +233,8 @@ void reply(int connfd, char *requestPath, char *requestMethod, char *httpVersion
     sendResponse(connfd, responseBuffer);
     free(fileBuffer);
     free(responseBuffer);
+    if (pathMallocd)
+    {
+        free(requestPath);
+    }
 }

@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/bin/server",
             "args": [
-                "8011"
+                "8073"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
