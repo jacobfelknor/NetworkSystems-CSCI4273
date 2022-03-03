@@ -130,7 +130,7 @@ int main(int argc, char **argv)
             // reply to client
             reply(connfd, requestPath, requestMethod, httpVersion);
             // close socket when done
-            close(sockfd);
+            close(connfd);
 
             break; // break out of the infinite loop and exit
         }
