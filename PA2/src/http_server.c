@@ -81,7 +81,7 @@ int main(int argc, char **argv)
         error("Listen failed...\n");
     }
     else
-        printf("got request..\n");
+        printf("Listening on port %d..\n", portno);
 
     int pid;
 
@@ -94,8 +94,6 @@ int main(int argc, char **argv)
         {
             error("server accept failed...\n");
         }
-        else
-            printf("connection successfull...\n");
 
         if ((pid = fork()) == -1)
         {

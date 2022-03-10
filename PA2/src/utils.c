@@ -152,7 +152,7 @@ bool validateRequestParams(char *requestPath, char *requestMethod, char *httpVer
         return false;
     }
 
-    if (!startsWith(httpVersion, "HTTP/1."))
+    if (!startsWith(httpVersion, "HTTP/"))
     {
         return false;
     }
