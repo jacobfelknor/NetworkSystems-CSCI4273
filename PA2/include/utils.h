@@ -11,7 +11,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-#define RESPONSE_FILE_BUFFER 1049000
+#define RESPONSE_FILE_BUFFER 1048576
 #define RESPONSE_BUFFER_SIZE RESPONSE_FILE_BUFFER + 100
 
 void error(char *msg);
@@ -30,8 +30,8 @@ char *getFileExtension(char *path);
 
 char *getContentType(char *path);
 
-void sendResponse(int connfd, char *responseBuffer);
+void sendResponse(int connfd, char *responseBuffer, long responseSize);
 
-void buildResponse(char *responseBuffer, char *httpVersion, char *statusCode, char *contentType, long contentLength);
+long buildResponse(char *responseBuffer, char *httpVersion, char *statusCode, char *contentType, long contentLength);
 
-void appendContent(char *responseBuffer, char *fileBuffer, long fileSize);
+long appendContent(char *responseBuffer, char *fileBuffer, long fileSize);

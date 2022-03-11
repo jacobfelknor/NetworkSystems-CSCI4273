@@ -111,21 +111,45 @@ void request2buffer(int connfd, char *buf, int bufsize)
 }
 
 // build a response with the specified information
-void buildResponse(char *responseBuffer, char *httpVersion, char *statusCode, char *contentType, long contentLength)
+long buildResponse(char *responseBuffer, char *httpVersion, char *statusCode, char *contentType, long contentLength)
 {
     snprintf(responseBuffer, RESPONSE_BUFFER_SIZE,
              "%s %s\r\nContent-Type: %s\r\nContent-Length: %ld\r\n\r\n",
              httpVersion, statusCode, contentType, contentLength);
+    // so far, the response is just a string. We can use strlen
+    return strlen(responseBuffer);
 }
 
 // send the response
-void sendResponse(int connfd, char *responseBuffer)
+void sendResponse(int connfd, char *responseBuffer, long responseSize)
 {
-    write(connfd, responseBuffer, RESPONSE_BUFFER_SIZE);
+    // double check responseSize fits in buffer
+    if (responseSize > RESPONSE_BUFFER_SIZE)
+    {
+        error("response would not fit in buffer");
+    }
+    // keep track of how many bytes we've sent so far
+    long bytesSent = 0;
+    while (bytesSent < responseSize) // only exit loop once we've sent all the bytes
+    {
+        // how many were sent on this iteration?
+        // want to send bytes starting at offset bytesSent, and send the difference between the total and sent so far
+        long n = write(connfd, responseBuffer + bytesSent, responseSize - bytesSent);
+        if (n < 0)
+        {
+            // error writing to socket. Exit
+            error("error on write");
+        }
+        else
+        {
+            // we sent n bytes. Increment our counter
+            bytesSent += n;
+        }
+    }
 }
 
-// put content in the response buff
-void appendContent(char *responseBuffer, char *fileBuffer, long fileSize)
+// put content in the response buff. Return total length
+long appendContent(char *responseBuffer, char *fileBuffer, long fileSize)
 {
     // get position in response buffer to put file
     int currlen = strlen(responseBuffer);
@@ -142,6 +166,8 @@ void appendContent(char *responseBuffer, char *fileBuffer, long fileSize)
             responseBuffer[i + currlen] = fileBuffer[i];
         }
     }
+
+    return currlen + fileSize;
 }
 
 // validate the 3 inputs COULD be valid...
@@ -169,6 +195,7 @@ void reply(int connfd, char *requestPath, char *requestMethod, char *httpVersion
     bzero(fileBuffer, RESPONSE_FILE_BUFFER);
     bzero(responseBuffer, RESPONSE_BUFFER_SIZE);
     long fileSize;
+    long responseSize;
     bool pathMallocd = false;
     // open the given filepath and put into the buffer
     FILE *fp;
@@ -202,27 +229,27 @@ void reply(int connfd, char *requestPath, char *requestMethod, char *httpVersion
 
     if (!validateRequestParams(requestPath, requestMethod, httpVersion))
     {
-        buildResponse(responseBuffer, "HTTP/1.1", "400 Bad Request", "text/html", 0);
+        responseSize = buildResponse(responseBuffer, "HTTP/1.1", "400 Bad Request", "text/html", 0);
     }
     else if (!(strcmp(httpVersion, "HTTP/1.1") == 0 || strcmp(httpVersion, "HTTP/1.0") == 0))
     {
-        buildResponse(responseBuffer, httpVersion, "505 HTTP Version Not Supported", "text/html", 0);
+        responseSize = buildResponse(responseBuffer, httpVersion, "505 HTTP Version Not Supported", "text/html", 0);
     }
     else if (strcmp(requestMethod, "GET") != 0)
     {
-        buildResponse(responseBuffer, httpVersion, "405 Method Not Allowed", "text/html", 0);
+        responseSize = buildResponse(responseBuffer, httpVersion, "405 Method Not Allowed", "text/html", 0);
     }
     else if (fp == NULL)
     {
         if (errno == ENOENT)
         {
             // ENOENT: No such file or directory
-            buildResponse(responseBuffer, httpVersion, "404 Not Found", "text/html", 0);
+            responseSize = buildResponse(responseBuffer, httpVersion, "404 Not Found", "text/html", 0);
         }
         else if (errno == EACCES)
         {
             // EACCES: Insufficient permissions to open the file
-            buildResponse(responseBuffer, httpVersion, "403 Forbidden", "text/html", 0);
+            responseSize = buildResponse(responseBuffer, httpVersion, "403 Forbidden", "text/html", 0);
         }
     }
     else
@@ -236,12 +263,12 @@ void reply(int connfd, char *requestPath, char *requestMethod, char *httpVersion
         long contentLength = fileSize;
 
         buildResponse(responseBuffer, httpVersion, statusCode, contentType, contentLength);
-        appendContent(responseBuffer, fileBuffer, fileSize);
+        responseSize = appendContent(responseBuffer, fileBuffer, fileSize);
         fclose(fp);
     }
 
     // write buffer to the client
-    sendResponse(connfd, responseBuffer);
+    sendResponse(connfd, responseBuffer, responseSize);
     free(fileBuffer);
     free(responseBuffer);
     if (pathMallocd)
