@@ -98,7 +98,13 @@ void putFileInBuffer(char *buf, int bufsize, FILE *f)
         error("Buffer too small to hold this file");
     }
 
-    fread(buf, fsize, 1, f);
+    // fread returns number of elements read.
+    // Here, I'm telling it each element is fsize long
+    // meaning, on success fread returns 1
+    if (fread(buf, fsize, 1, f) != 1)
+    {
+        error("error on fread..\n");
+    }
 }
 
 // copy the web request string into the given buffer
@@ -107,7 +113,12 @@ void request2buffer(int connfd, char *buf, int bufsize)
     // clear any existing data
     bzero(buf, bufsize);
     // store request in our buffer
-    read(connfd, buf, bufsize);
+    // read is a blocking call until bytes are sent to buffer
+    // Assume we got everything in one read, will throw 400 if malformed
+    if (read(connfd, buf, bufsize) < 0)
+    {
+        error("error parsing request from socket..\n");
+    }
 }
 
 // build a response with the specified information
