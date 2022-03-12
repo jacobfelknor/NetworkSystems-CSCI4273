@@ -155,6 +155,7 @@ void sendResponse(int connfd, char *responseBuffer, long responseSize)
         {
             // we sent n bytes. Increment our counter
             bytesSent += n;
+            printf("Sent %ld/%ld bytes\n", bytesSent, responseSize);
         }
     }
 }
