@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/bin/proxy",
             "args": [
-                "8073"
+                "8094"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

@@ -14,7 +14,7 @@
 void split_url(char *requestPath, char *host, char *page)
 {
 
-    sscanf(requestPath, "http://\%[^/]/%99[^\n]", host, page);
+    sscanf(requestPath, "http://\%[^/]%99[^\n]", host, page);
     if (strlen(page) == 0)
     {
         page[0] = '/';
@@ -94,20 +94,31 @@ void http_forward(int connfd, char *request)
         return;
     }
     // printf("%s\n", request);
-    printf("%s\n%s\n", hostname, page);
+    // printf("%s\n%s\n", hostname, page);
 
     int sockfd = get_socket(hostname);
     // setup complete. Send request and capture the response
-    write(sockfd, "GET / HTTP/1.1\r\n", strlen("GET / HTTP/1.1\r\n"));
+
+    char *myrequest = (char *)malloc(1000);
+    snprintf(myrequest, 1000,
+             "GET %s %s\r\n\r\n", page, httpVersion);
+    printf("%s\n", myrequest);
+    write(sockfd, myrequest, strlen(myrequest));
 
     // read back response from server
-    read(sockfd, responseBuffer, RESPONSE_BUFFER_SIZE);
+    int bytesRead = 0;
+    int chunk = 1;
+    while (chunk > 0)
+    {
+        chunk = read(sockfd, responseBuffer, RESPONSE_BUFFER_SIZE);
+        bytesRead += chunk;
+    };
 
     // read(sockfd, responseBuffer, 1000);
 
     // printf("%s\n", responseBuffer);
 
-    sendResponse(connfd, responseBuffer, RESPONSE_BUFFER_SIZE);
+    sendResponse(connfd, responseBuffer, bytesRead);
 
     // printf("I would fetch and reply from here...\n");
 }
