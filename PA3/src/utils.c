@@ -124,9 +124,19 @@ void request2buffer(int connfd, char *buf, int bufsize)
 // build a response with the specified information
 long buildResponse(char *responseBuffer, char *httpVersion, char *statusCode, char *contentType, long contentLength)
 {
-    snprintf(responseBuffer, RESPONSE_BUFFER_SIZE,
-             "%s %s\r\nContent-Type: %s\r\nContent-Length: %ld\r\n\r\n",
-             httpVersion, statusCode, contentType, contentLength);
+    if (contentType != NULL && contentLength != -1)
+    {
+
+        snprintf(responseBuffer, RESPONSE_BUFFER_SIZE,
+                 "%s %s\r\nContent-Type: %s\r\nContent-Length: %ld\r\n\r\n",
+                 httpVersion, statusCode, contentType, contentLength);
+    }
+    else
+    {
+        snprintf(responseBuffer, RESPONSE_BUFFER_SIZE,
+                 "%s %s\r\n\r\n",
+                 httpVersion, statusCode);
+    }
     // so far, the response is just a string. We can use strlen
     return strlen(responseBuffer);
 }
