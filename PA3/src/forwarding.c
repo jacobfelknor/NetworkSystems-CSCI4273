@@ -59,6 +59,7 @@ int get_socket(char *hostname)
     serveraddr.sin_family = AF_INET;
     bcopy((char *)host->h_addr,
           (char *)&serveraddr.sin_addr.s_addr, host->h_length);
+    // TODO: make the port an argument
     serveraddr.sin_port = htons(8000);
 
     // connect
@@ -110,7 +111,7 @@ void http_forward(int connfd, char *request)
     int chunk = 1;
     while (chunk > 0)
     {
-        chunk = read(sockfd, responseBuffer, RESPONSE_BUFFER_SIZE);
+        chunk = read(sockfd, responseBuffer + bytesRead, RESPONSE_BUFFER_SIZE - bytesRead);
         bytesRead += chunk;
     };
 
