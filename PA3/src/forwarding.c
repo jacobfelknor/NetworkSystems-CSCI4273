@@ -59,8 +59,9 @@ int get_socket(char *hostname)
     serveraddr.sin_family = AF_INET;
     bcopy((char *)host->h_addr,
           (char *)&serveraddr.sin_addr.s_addr, host->h_length);
+
     // TODO: make the port an argument
-    serveraddr.sin_port = htons(8000);
+    serveraddr.sin_port = htons(80);
 
     // connect
     if (connect(sockfd, (struct sockaddr *)&serveraddr, sizeof(struct sockaddr_in)) == -1)
@@ -102,24 +103,53 @@ void http_forward(int connfd, char *request)
 
     char *myrequest = (char *)malloc(1000);
     snprintf(myrequest, 1000,
-             "GET %s %s\r\n\r\n", page, httpVersion);
+             "GET %s %s\r\nHost: %s\r\nConnection: close\r\n\r\n", page, httpVersion, hostname);
     printf("%s\n", myrequest);
     write(sockfd, myrequest, strlen(myrequest));
 
     // read back response from server
     int bytesRead = 0;
     int chunk = 1;
+    int totalContentLength = 0;
+
+    // 2 strategies here:
+    //      - Specify the Connection: close header so that read() doesn't continue to block for
+    //        x seconds until timeout specified by server is met
+
+    //      - Parse the Content-Length header and read until we've gotten all the bytes we're expecting
+    //           - unforntuately, not everyone is nice and includes this header. So, I wouldn't get all the
+    //             information because I wouldn't know when to stop and read() could block if the server
+    //             kept the connection alive
+    //           - httpforever.com didn't include the header :( I was using them to test
+    //           - neverssl.com DOES include header :)
+
+    // while (bytesRead < totalContentLength)
     while (chunk > 0)
     {
         chunk = read(sockfd, responseBuffer + bytesRead, RESPONSE_BUFFER_SIZE - bytesRead);
+        // Content-Length parsing below....
+        // if (totalContentLength == 0)
+        // {
+        //     // find Content-Length. Use this to decide if we've finished reading.
+        //     char *position = strstr(responseBuffer, "Content-Length");
+        //     char *endOfHeaders = strstr(responseBuffer, "\r\n\r\n") + strlen("\r\n\r\n");
+        //     int lengthOfHeaders = endOfHeaders - responseBuffer;
+        //     if (position != NULL)
+        //     {
+
+        //         sscanf(position, "Content-Length: %d", &totalContentLength);
+        //     }
+        //     else
+        //     {
+        //         // Content-Length is unspecified.
+        //     }
+        //     totalContentLength += lengthOfHeaders;
+        // }
         bytesRead += chunk;
     };
 
-    // read(sockfd, responseBuffer, 1000);
-
-    // printf("%s\n", responseBuffer);
-
     sendResponse(connfd, responseBuffer, bytesRead);
 
-    // printf("I would fetch and reply from here...\n");
+    free(responseBuffer);
+    free(myrequest);
 }
