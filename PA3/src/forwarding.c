@@ -82,32 +82,20 @@ int get_socket(char *hostname, int port)
     return sockfd;
 }
 
-void http_forward(int connfd, char *request)
+void http_forward(int connfd, char *responseBuffer, long *responseSize, char *requestMethod, char *requestPath, char *httpVersion)
 {
-
-    // parse first line of request for our 3 main substrings (with conservatively long buffers...)
-    char requestMethod[20]; // e.g. GET, POST, etc
-    char hostname[100];     // e.g. www.nginx.org
-    int port;               // e.g. 80
-    char requestPath[260];  // e.g. /some/dir/page.html
+    char hostname[100]; // e.g. www.nginx.org
+    int port;           // e.g. 80
     char page[200];
     bzero(page, 200);
-    char httpVersion[20]; // e.g. HTTP/1.1
-    long responseSize;
-    char *responseBuffer = (char *)malloc(RESPONSE_BUFFER_SIZE);
 
-    splitRequestString(request, requestMethod, requestPath, httpVersion);
+    // extract our host and port
     split_url(requestPath, hostname, &port, page);
 
-    if (strcmp(requestMethod, "GET") != 0)
-    {
-        // i'm just ignoring other requests for now because they're anoying
-        return;
-    }
-
+    // get a socket for use to use to communicate to the webserver
     int sockfd = get_socket(hostname, port);
-    // setup complete. Send request and capture the response
 
+    // setup complete. Send request and capture the response
     char *myrequest = (char *)malloc(MAX_REQUEST_LENGTH);
     snprintf(myrequest, MAX_REQUEST_LENGTH,
              "GET %s %s\r\nHost: %s\r\nConnection: close\r\n\r\n", page, httpVersion, hostname);
@@ -115,9 +103,8 @@ void http_forward(int connfd, char *request)
     write(sockfd, myrequest, strlen(myrequest));
 
     // read back response from server
-    int bytesRead = 0;
+    *responseSize = 0;
     int chunk = 1;
-    int totalContentLength = 0;
 
     // 2 strategies here:
     //      - Specify the Connection: close header so that read() doesn't continue to block for
@@ -130,10 +117,11 @@ void http_forward(int connfd, char *request)
     //           - httpforever.com didn't include the header :( I was using them to test
     //           - neverssl.com DOES include header :)
 
+    // int totalContentLength = 0;
     // while (bytesRead < totalContentLength)
     while (chunk > 0)
     {
-        chunk = read(sockfd, responseBuffer + bytesRead, RESPONSE_BUFFER_SIZE - bytesRead);
+        chunk = read(sockfd, responseBuffer + *responseSize, RESPONSE_BUFFER_SIZE - *responseSize);
         // Content-Length parsing below....
         // if (totalContentLength == 0)
         // {
@@ -152,11 +140,8 @@ void http_forward(int connfd, char *request)
         //     }
         //     totalContentLength += lengthOfHeaders;
         // }
-        bytesRead += chunk;
+        *responseSize += chunk;
     };
 
-    sendResponse(connfd, responseBuffer, bytesRead);
-
-    free(responseBuffer);
     free(myrequest);
 }

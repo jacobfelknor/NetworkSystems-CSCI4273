@@ -14,7 +14,7 @@ clean:
 	rm -f $(BIN)/*
 
 $(BIN)/proxy: $(SRC)/proxy.c $(SRC)/utils.c $(SRC)/str_utils.c $(SRC)/forwarding.c
-	$(CC) $(CFLAGS) -I$(INCLUDE) $^ -o $@
+	$(CC) $(CFLAGS) -I$(INCLUDE) $^ -o $@ -lcrypto -lssl -lz
 
 # $(BIN)/udp_client: $(SRC)/udp_client.c $(SRC)/str_utils.c $(SRC)/file_transfer.c $(SRC)/utils.c
 # 	$(CC) $(CFLAGS) -I$(INCLUDE) $^ -o $@

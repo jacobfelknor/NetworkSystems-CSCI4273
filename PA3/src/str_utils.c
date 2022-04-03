@@ -78,3 +78,28 @@ char *strConcat(const char *s1, const char *s2)
     strcat(result, s2);
     return result;
 }
+
+// adapted from https://stackoverflow.com/a/58065405
+char *computeMD5Path(char *str)
+{
+    int DIGEST_STR_SIZE = 33;
+    char *cachePath = "cache/";
+    int bufsize = strlen(cachePath) + DIGEST_STR_SIZE;
+    char *digestPath = (char *)malloc(bufsize);
+    bzero(digestPath, bufsize);
+    strcpy(digestPath, cachePath);
+
+    char *digeststr = digestPath + strlen(cachePath);
+    unsigned char digest[16];
+    MD5_CTX ctx;
+    MD5_Init(&ctx);
+    MD5_Update(&ctx, str, strlen(str));
+    MD5_Final(digest, &ctx);
+
+    for (int i = 0, j = 0; i < 16; i++, j += 2)
+    {
+        sprintf(digeststr + j, "%02x", digest[i]);
+    }
+
+    return digestPath;
+}

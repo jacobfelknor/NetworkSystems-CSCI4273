@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
+#include <openssl/md5.h>
 
 char *sgets(char *s, int n, char **strp);
 
@@ -10,3 +11,5 @@ void splitRequestString(char *request, char *requestMethod, char *requestPath, c
 bool startsWith(const char *a, const char *b);
 
 char *strConcat(const char *s1, const char *s2);
+
+char *computeMD5Path(char *str);

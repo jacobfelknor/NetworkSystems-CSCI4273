@@ -4,11 +4,11 @@ to build the project:
 remove binaries:
     make clean
 
-binary stored in ./bin/server
+binary stored in ./bin/proxy
 
 Usage: 
     ./bin/server <port>
 
 Assumptions:
-    assuming that there is a directory ./www/ in the cwd wherever the server is being ran
-    so, if running ./bin/server from the root of this project, there must exist a ./www/
+    assuming a ./cache folder already exists in the current directory.
+    

@@ -1,6 +1,8 @@
 {
     "files.associations": {
         "netdb.h": "c",
-        "utils.h": "c"
+        "utils.h": "c",
+        "str_utils.h": "c",
+        "md5.h": "c"
     }
 }

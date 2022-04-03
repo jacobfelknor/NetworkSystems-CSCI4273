@@ -10,6 +10,7 @@
 #include <linux/limits.h>
 #include <stdbool.h>
 #include <sys/wait.h>
+#include <libgen.h>
 
 #include "../include/utils.h"
 #include "../include/str_utils.h"
@@ -24,7 +25,7 @@ int main(int argc, char **argv)
     struct sockaddr_in serveraddr; /* server's addr */
     struct sockaddr_in clientaddr; /* client addr */
     struct hostent *hostp;         /* client host info */
-    char buf[BUFSIZ];              /* message buf */
+    char request[BUFSIZ];          /* message request */
     char *hostaddrp;               /* dotted decimal host addr string */
     int optval;                    /* flag value for setsockopt */
     int n;                         /* message byte size */
@@ -113,27 +114,64 @@ int main(int argc, char **argv)
             // I'm the child. Service the request
 
             // copy request string into our buffer
-            request2buffer(connfd, buf, BUFSIZ);
+            request2buffer(connfd, request, BUFSIZ);
 
             // parse first line of request for our 3 main substrings (with conservatively long buffers...)
-            // char requestMethod[20]; // e.g. GET, POST, etc
-            // char requestPath[260];  // e.g. /some/dir/page.html
-            // char httpVersion[20];   // e.g. HTTP/1.1
+            char requestMethod[20]; // e.g. GET, POST, etc
+            char requestPath[260];  // e.g. /some/dir/page.html
+            char httpVersion[20];   // e.g. HTTP/1.1
+            char *responseBuffer = (char *)malloc(RESPONSE_BUFFER_SIZE);
+            bzero(responseBuffer, RESPONSE_BUFFER_SIZE);
+            long responseSize;
 
-            // const char *root = "./www"; // our document root relative path
-            // strcpy(requestPath, root);  // prepend our root to this string.
-            // splitRequestString(buf, requestMethod, requestPath, httpVersion);
-            // printf("   %s\n   %s\n   %s\n", requestMethod, requestPath, httpVersion);
+            splitRequestString(request, requestMethod, requestPath, httpVersion);
 
-            // reply to client (via files for cache?)
-            // can implement caching stuff here...
-            // reply(connfd, requestPath, requestMethod, httpVersion);
+            if (requestIsValid(responseBuffer, requestPath, requestMethod, httpVersion, &responseSize))
+            {
 
-            // not in our files. forward http response to the actual server
-            http_forward(connfd, buf);
+                // compute the md5 hash of the request path. This will allow us to look later if a
+                // user has requested the same page
+                char *md5path = computeMD5Path(requestPath);
+                printf("    Looking for %s\n", md5path);
+                FILE *readCachefp = fopen(md5path, "rb");
+                // if fopen returns a null pointer, we can't read the file for whatever reason
+                // could be permissions, could be file DNE, it doesn't matter to us. We can't use it.
+                if (readCachefp != NULL)
+                {
+                    // CACHE HIT!
+                    printf("    Cache Hit!\n");
+                    putFileInBuffer(responseBuffer, RESPONSE_BUFFER_SIZE, readCachefp);
+                    responseSize = getFileSize(readCachefp);
+                    fclose(readCachefp);
+                }
+                else
+                {
+                    // we missed cache. Forward the request on to the origin web server
+                    printf("    Cache Miss! Forwarding on to web server...\n");
+                    http_forward(connfd, responseBuffer, &responseSize, requestMethod, requestPath, httpVersion);
+
+                    // Now that we got a copy, we can cache these files for future use
+                    FILE *writeCachefp = fopen(md5path, "wb");
+                    printf("    Cached response to %s\n", md5path);
+                    putBufferInFile(responseBuffer, responseSize, writeCachefp);
+                    fclose(writeCachefp);
+                }
+
+                free(md5path);
+            }
+            else
+            {
+                // requestIsValid builds our response for us if it's invalid. We can fall out of
+                // this and just return to client
+            }
+
+            // send response back to client
+            sendResponse(connfd, responseBuffer, responseSize);
             // close socket when done
             close(connfd);
 
+            // free memory
+            free(responseBuffer);
             break; // break out of the infinite loop and exit
         }
     }

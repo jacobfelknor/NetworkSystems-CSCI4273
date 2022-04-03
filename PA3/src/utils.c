@@ -29,6 +29,27 @@ int isDirectory(const char *path)
     return S_ISDIR(statbuf.st_mode);
 }
 
+// https://stackoverflow.com/a/2336245
+void r_mkdir(const char *dir)
+{
+    char tmp[PATH_MAX];
+    char *p = NULL;
+    size_t len;
+
+    snprintf(tmp, sizeof(tmp), "%s", dir);
+    len = strlen(tmp);
+    if (tmp[len - 1] == '/')
+        tmp[len - 1] = 0;
+    for (p = tmp + 1; *p; p++)
+        if (*p == '/')
+        {
+            *p = 0;
+            mkdir(tmp, S_IRWXU);
+            *p = '/';
+        }
+    mkdir(tmp, S_IRWXU);
+}
+
 char *getFileExtension(char *path)
 {
     // adapted from https://stackoverflow.com/a/5309514
@@ -104,6 +125,18 @@ void putFileInBuffer(char *buf, int bufsize, FILE *f)
     if (fread(buf, fsize, 1, f) != 1)
     {
         error("error on fread..\n");
+    }
+}
+
+void putBufferInFile(char *buf, int bufsize, FILE *f)
+{
+    if (f)
+    {
+        fwrite(buf, bufsize, 1, f);
+    }
+    else
+    {
+        error("File pointer error");
     }
 }
 
@@ -208,16 +241,35 @@ bool validateRequestParams(char *requestPath, char *requestMethod, char *httpVer
     return true;
 }
 
+// send some common response codes
+bool requestIsValid(char *responseBuffer, char *requestPath, char *requestMethod, char *httpVersion, long *responseSize)
+{
+    if (!validateRequestParams(requestPath, requestMethod, httpVersion))
+    {
+        *responseSize = buildResponse(responseBuffer, "HTTP/1.1", "400 Bad Request", "text/html", 0);
+        return false;
+    }
+    else if (!(strcmp(httpVersion, "HTTP/1.1") == 0 || strcmp(httpVersion, "HTTP/1.0") == 0))
+    {
+        *responseSize = buildResponse(responseBuffer, httpVersion, "505 HTTP Version Not Supported", "text/html", 0);
+        return false;
+    }
+    else if (strcmp(requestMethod, "GET") != 0)
+    {
+        *responseSize = buildResponse(responseBuffer, httpVersion, "405 Method Not Allowed", "text/html", 0);
+        return false;
+    }
+
+    return true;
+}
+
 // send the client back a copy of the file specified at path
-void reply(int connfd, char *requestPath, char *requestMethod, char *httpVersion)
+void reply(int connfd, char *responseBuffer, long *responseSize, char *requestPath, char *requestMethod, char *httpVersion)
 {
     // create a buffer to store the file
     char *fileBuffer = (char *)malloc(RESPONSE_FILE_BUFFER);
-    char *responseBuffer = (char *)malloc(RESPONSE_BUFFER_SIZE);
     bzero(fileBuffer, RESPONSE_FILE_BUFFER);
-    bzero(responseBuffer, RESPONSE_BUFFER_SIZE);
     long fileSize;
-    long responseSize;
     bool pathMallocd = false;
     // open the given filepath and put into the buffer
     FILE *fp;
@@ -249,29 +301,22 @@ void reply(int connfd, char *requestPath, char *requestMethod, char *httpVersion
         fp = fopen(newRequestPath, "r");
     }
 
-    if (!validateRequestParams(requestPath, requestMethod, httpVersion))
+    if (!requestIsValid(responseBuffer, requestPath, requestMethod, httpVersion, responseSize))
     {
-        responseSize = buildResponse(responseBuffer, "HTTP/1.1", "400 Bad Request", "text/html", 0);
-    }
-    else if (!(strcmp(httpVersion, "HTTP/1.1") == 0 || strcmp(httpVersion, "HTTP/1.0") == 0))
-    {
-        responseSize = buildResponse(responseBuffer, httpVersion, "505 HTTP Version Not Supported", "text/html", 0);
-    }
-    else if (strcmp(requestMethod, "GET") != 0)
-    {
-        responseSize = buildResponse(responseBuffer, httpVersion, "405 Method Not Allowed", "text/html", 0);
+        // request wasn't valid, return out
+        return;
     }
     else if (fp == NULL)
     {
         if (errno == ENOENT)
         {
             // ENOENT: No such file or directory
-            responseSize = buildResponse(responseBuffer, httpVersion, "404 Not Found", "text/html", 0);
+            *responseSize = buildResponse(responseBuffer, httpVersion, "404 Not Found", "text/html", 0);
         }
         else if (errno == EACCES)
         {
             // EACCES: Insufficient permissions to open the file
-            responseSize = buildResponse(responseBuffer, httpVersion, "403 Forbidden", "text/html", 0);
+            *responseSize = buildResponse(responseBuffer, httpVersion, "403 Forbidden", "text/html", 0);
         }
     }
     else
@@ -287,14 +332,12 @@ void reply(int connfd, char *requestPath, char *requestMethod, char *httpVersion
         long contentLength = fileSize;
 
         buildResponse(responseBuffer, httpVersion, statusCode, contentType, contentLength);
-        responseSize = appendContent(responseBuffer, fileBuffer, fileSize);
+        *responseSize = appendContent(responseBuffer, fileBuffer, fileSize);
         fclose(fp);
     }
 
-    // write buffer to the client
-    sendResponse(connfd, responseBuffer, responseSize);
+    // free our memory used
     free(fileBuffer);
-    free(responseBuffer);
     if (pathMallocd)
     {
         free(requestPath);
