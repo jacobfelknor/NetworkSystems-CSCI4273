@@ -16,8 +16,6 @@
 
 void error(char *msg);
 
-void reply(int connfd, char *responseBuffer, long *responseSize, char *path, char *requestMethod, char *httpVersion);
-
 void request2buffer(int connfd, char *buf, int bufsize);
 
 void putFileInBuffer(char *buf, int bufsize, FILE *f);
@@ -25,18 +23,9 @@ void putBufferInFile(char *buf, int bufsize, FILE *f);
 
 long getFileSize(FILE *f);
 
-int isDirectory(const char *path);
-void r_mkdir(const char *dir);
-
-char *getFileExtension(char *path);
-
-char *getContentType(char *path);
-
 void sendResponse(int connfd, char *responseBuffer, long responseSize);
 
 long buildResponse(char *responseBuffer, char *httpVersion, char *statusCode, char *contentType, long contentLength);
-
-long appendContent(char *responseBuffer, char *fileBuffer, long fileSize);
 
 bool validateRequestParams(char *requestPath, char *requestMethod, char *httpVersion);
 
