@@ -11,10 +11,23 @@
 #include "../include/forwarding.h"
 
 // adapted from https://stackoverflow.com/a/726214
-void split_url(char *requestPath, char *host, char *page)
+void split_url(char *requestPath, char *host, int *port, char *page)
 {
-
+    // first, split the host:port and /page
     sscanf(requestPath, "http://\%[^/]%99[^\n]", host, page);
+    // now, split the host into the true host:port
+    *port = -1;
+    sscanf(host, "%*[^:]:%d", port);
+    if (*port == -1)
+    {
+        // port not specified. Use 80
+        *port = 80;
+    }
+    else
+    {
+        // truncate the host string at the :
+        host[strcspn(host, ":")] = 0;
+    }
     if (strlen(page) == 0)
     {
         page[0] = '/';
@@ -24,7 +37,7 @@ void split_url(char *requestPath, char *host, char *page)
     // strcpy(requestPath, page)
 }
 
-int get_socket(char *hostname)
+int get_socket(char *hostname, int port)
 {
     int sockfd;                    /* socket */
     struct sockaddr_in serveraddr; /* server's addr */
@@ -61,7 +74,7 @@ int get_socket(char *hostname)
           (char *)&serveraddr.sin_addr.s_addr, host->h_length);
 
     // TODO: make the port an argument
-    serveraddr.sin_port = htons(80);
+    serveraddr.sin_port = htons(port);
 
     // connect
     if (connect(sockfd, (struct sockaddr *)&serveraddr, sizeof(struct sockaddr_in)) == -1)
@@ -78,6 +91,7 @@ void http_forward(int connfd, char *request)
     // parse first line of request for our 3 main substrings (with conservatively long buffers...)
     char requestMethod[20]; // e.g. GET, POST, etc
     char hostname[100];     // e.g. www.nginx.org
+    int port;               // e.g. 80
     char requestPath[260];  // e.g. /some/dir/page.html
     char page[200];
     bzero(page, 200);
@@ -88,7 +102,7 @@ void http_forward(int connfd, char *request)
     // const char *root = "./www"; // our document root relative path
     // strcpy(requestPath, root);  // prepend our root to this string.
     splitRequestString(request, requestMethod, requestPath, httpVersion);
-    split_url(requestPath, hostname, page);
+    split_url(requestPath, hostname, &port, page);
 
     if (strcmp(requestMethod, "GET") != 0)
     {
@@ -98,7 +112,7 @@ void http_forward(int connfd, char *request)
     // printf("%s\n", request);
     // printf("%s\n%s\n", hostname, page);
 
-    int sockfd = get_socket(hostname);
+    int sockfd = get_socket(hostname, port);
     // setup complete. Send request and capture the response
 
     char *myrequest = (char *)malloc(1000);
