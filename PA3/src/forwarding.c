@@ -10,11 +10,13 @@
 
 #include "../include/forwarding.h"
 
+#define MAX_REQUEST_LENGTH 1000
+
 // adapted from https://stackoverflow.com/a/726214
 void split_url(char *requestPath, char *host, int *port, char *page)
 {
     // first, split the host:port and /page
-    sscanf(requestPath, "http://\%[^/]%99[^\n]", host, page);
+    sscanf(requestPath, "http://%[^/]%99[^\n]", host, page);
     // now, split the host into the true host:port
     *port = -1;
     sscanf(host, "%*[^:]:%d", port);
@@ -28,13 +30,11 @@ void split_url(char *requestPath, char *host, int *port, char *page)
         // truncate the host string at the :
         host[strcspn(host, ":")] = 0;
     }
+    // if we don't have a path given, just use /
     if (strlen(page) == 0)
     {
         page[0] = '/';
     }
-    // printf("host = \"%s\"\n", host);
-    // printf("page = \"%s\"\n", page);
-    // strcpy(requestPath, page)
 }
 
 int get_socket(char *hostname, int port)
@@ -63,8 +63,7 @@ int get_socket(char *hostname, int port)
     host = gethostbyname(hostname);
     if (host == NULL)
     {
-        fprintf(stderr, "ERROR, no such host as %s\n", hostname);
-        exit(0);
+        error("no such host");
     }
 
     /* build the server's Internet address */
@@ -72,14 +71,12 @@ int get_socket(char *hostname, int port)
     serveraddr.sin_family = AF_INET;
     bcopy((char *)host->h_addr,
           (char *)&serveraddr.sin_addr.s_addr, host->h_length);
-
-    // TODO: make the port an argument
     serveraddr.sin_port = htons(port);
 
     // connect
     if (connect(sockfd, (struct sockaddr *)&serveraddr, sizeof(struct sockaddr_in)) == -1)
     {
-        error("connection refused");
+        error("Error on connect");
     }
 
     return sockfd;
@@ -99,8 +96,6 @@ void http_forward(int connfd, char *request)
     long responseSize;
     char *responseBuffer = (char *)malloc(RESPONSE_BUFFER_SIZE);
 
-    // const char *root = "./www"; // our document root relative path
-    // strcpy(requestPath, root);  // prepend our root to this string.
     splitRequestString(request, requestMethod, requestPath, httpVersion);
     split_url(requestPath, hostname, &port, page);
 
@@ -109,14 +104,12 @@ void http_forward(int connfd, char *request)
         // i'm just ignoring other requests for now because they're anoying
         return;
     }
-    // printf("%s\n", request);
-    // printf("%s\n%s\n", hostname, page);
 
     int sockfd = get_socket(hostname, port);
     // setup complete. Send request and capture the response
 
-    char *myrequest = (char *)malloc(1000);
-    snprintf(myrequest, 1000,
+    char *myrequest = (char *)malloc(MAX_REQUEST_LENGTH);
+    snprintf(myrequest, MAX_REQUEST_LENGTH,
              "GET %s %s\r\nHost: %s\r\nConnection: close\r\n\r\n", page, httpVersion, hostname);
     printf("%s\n", myrequest);
     write(sockfd, myrequest, strlen(myrequest));
