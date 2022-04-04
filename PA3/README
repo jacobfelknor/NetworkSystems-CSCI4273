@@ -12,3 +12,4 @@ Usage:
 Assumptions:
     assuming a ./cache folder already exists in the current directory.
     
+    TODO: blocklist

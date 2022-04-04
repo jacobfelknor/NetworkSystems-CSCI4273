@@ -20,6 +20,25 @@ long getFileSize(FILE *f)
     return fsize;
 }
 
+bool fileIsOlderThan(char *path, int s)
+{
+    /* check whether the differnce between the file's timestamp
+     *  and the current time is greater that s seconds
+     */
+    // get the current time. https://stackoverflow.com/a/11765379
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+
+    // now get file modification timestamp
+    // adapted from https://stackoverflow.com/a/4021526
+    struct stat statbuf;
+    if (stat(path, &statbuf) == -1)
+    {
+        error("Error on stat");
+    }
+    return (tv.tv_sec - statbuf.st_mtime) > (unsigned long)s;
+}
+
 void putFileInBuffer(char *buf, int bufsize, FILE *f)
 {
     // clear buffer first

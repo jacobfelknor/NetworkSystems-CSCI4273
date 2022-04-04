@@ -29,16 +29,18 @@ int main(int argc, char **argv)
     char *hostaddrp;               /* dotted decimal host addr string */
     int optval;                    /* flag value for setsockopt */
     int n;                         /* message byte size */
+    int cacheage;                  /* number of seconds to keep the cache */
 
     /*
      * check command line arguments
      */
-    if (argc != 2)
+    if (argc != 3)
     {
-        fprintf(stderr, "usage: %s <port>\n", argv[0]);
+        fprintf(stderr, "usage: %s <port> <cache age>\n", argv[0]);
         exit(1);
     }
     portno = atoi(argv[1]);
+    cacheage = atoi(argv[2]);
 
     /*
      * socket: create the parent socket
@@ -136,7 +138,7 @@ int main(int argc, char **argv)
                 FILE *readCachefp = fopen(md5path, "rb");
                 // if fopen returns a null pointer, we can't read the file for whatever reason
                 // could be permissions, could be file DNE, it doesn't matter to us. We can't use it.
-                if (readCachefp != NULL)
+                if (readCachefp != NULL && !fileIsOlderThan(md5path, cacheage))
                 {
                     // CACHE HIT!
                     printf("    Cache Hit!\n");
@@ -146,7 +148,8 @@ int main(int argc, char **argv)
                 }
                 else
                 {
-                    // we missed cache. Forward the request on to the origin web server
+                    // we missed cache. Either DNE or was too old
+                    // Forward the request on to the origin web server
                     printf("    Cache Miss! Forwarding on to web server...\n");
                     http_forward(connfd, responseBuffer, &responseSize, requestMethod, requestPath, httpVersion);
 
