@@ -98,8 +98,8 @@ void http_forward(int connfd, char *responseBuffer, long *responseSize, char *re
     int sockfd = get_socket(hostname, port);
     if (sockfd == -1)
     {
-        // get_socket failed in gethostbyname. Return 400 Bad Request per lab instructions
-        *responseSize = buildResponse(responseBuffer, httpVersion, "400 Bad Request", "text/html", 0);
+        // get_socket failed in gethostbyname. Return 404 Not Found per lab instructions
+        *responseSize = buildResponse(responseBuffer, httpVersion, "404 Not Found", "text/html", 0);
         return;
     }
 
