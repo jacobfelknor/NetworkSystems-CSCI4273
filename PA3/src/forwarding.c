@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <arpa/inet.h>
 
 #include "../include/forwarding.h"
 
@@ -35,6 +36,33 @@ void split_url(char *requestPath, char *host, int *port, char *page)
     {
         page[0] = '/';
     }
+}
+
+bool hostBlocked(char *host)
+{
+    // open blocklist, search file for host, then return if I find it
+    return false;
+}
+
+// adapted from https://stackoverflow.com/q/44763040
+char *host2ip(struct hostent *host)
+{
+    // translate hostent to string ip
+    // xxx.xxx.xxx.xxx -->
+    char *hostname = (char *)malloc(strlen("xxx.xxx.xxx.xxx"));
+    bzero(hostname, strlen("xxx.xxx.xxx.xxx"));
+    int j = 0;
+    for (int i = 0; i < host->h_length; i++)
+    {
+        j += sprintf(hostname + j, "%d", (unsigned char)host->h_addr_list[0][i]);
+        if (i != host->h_length - 1)
+        {
+            hostname[j] = '.';
+            j += 1;
+        }
+    }
+
+    return hostname;
 }
 
 int get_socket(char *hostname, int port)
@@ -66,6 +94,17 @@ int get_socket(char *hostname, int port)
         // error("no such host");
         // on dns lookup failure, return -1
         return -1;
+    }
+    else
+    {
+        char *ip = host2ip(host);
+        printf("%s\n", ip);
+        if (hostBlocked(ip) || hostBlocked(hostname))
+        {
+            // on blocked host, return -2
+            return -2;
+        }
+        free(ip);
     }
 
     /* build the server's Internet address */
@@ -100,6 +139,12 @@ void http_forward(int connfd, char *responseBuffer, long *responseSize, char *re
     {
         // get_socket failed in gethostbyname. Return 404 Not Found per lab instructions
         *responseSize = buildResponse(responseBuffer, httpVersion, "404 Not Found", "text/html", 0);
+        return;
+    }
+    else if (sockfd == -2)
+    {
+        // get_socket detected a blocked ip address. Return 403 Forbidden
+        *responseSize = buildResponse(responseBuffer, httpVersion, "403 Forbidden", "text/html", 0);
         return;
     }
 
