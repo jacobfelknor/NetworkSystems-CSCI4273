@@ -7,9 +7,11 @@ remove binaries:
 binary stored in ./bin/proxy
 
 Usage: 
-    ./bin/server <port>
+    ./bin/proxy <port> <cacheage>
 
 Assumptions:
     assuming a ./cache folder already exists in the current directory.
-    
-    TODO: blocklist
+    blocklist file is optional - if it DNE my proxy blocks nothing
+    blocklist file changes will go into effect after the cache for that page has expired (or immediately if cache DNE for host)
+
+    Proxy does not work for secured https connections. Plain http only.
