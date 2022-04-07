@@ -138,7 +138,8 @@ int main(int argc, char **argv)
                 FILE *readCachefp = fopen(md5path, "rb");
                 // if fopen returns a null pointer, we can't read the file for whatever reason
                 // could be permissions, could be file DNE, it doesn't matter to us. We can't use it.
-                if (readCachefp != NULL && !fileIsOlderThan(md5path, cacheage))
+                // then check if cache is too old or if we're requesting dynamic content, indicated by a ? in the requestPath
+                if (readCachefp != NULL && !fileIsOlderThan(md5path, cacheage) && !strstr(requestPath, "?"))
                 {
                     // CACHE HIT!
                     printf("    Cache Hit!\n");
