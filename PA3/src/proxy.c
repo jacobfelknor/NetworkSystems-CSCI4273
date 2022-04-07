@@ -158,6 +158,10 @@ int main(int argc, char **argv)
                     printf("    Cached response to %s\n", md5path);
                     putBufferInFile(responseBuffer, responseSize, writeCachefp);
                     fclose(writeCachefp);
+                    if (readCachefp != NULL)
+                    {
+                        fclose(readCachefp);
+                    }
                 }
 
                 free(md5path);

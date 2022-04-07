@@ -60,8 +60,10 @@ bool hostBlocked(char *host)
             found = strstr(fileBuffer, host);
             bool block = (found != NULL);
             free(fileBuffer);
+            fclose(blocklist);
             return block;
         }
+        fclose(blocklist);
     }
     return false;
 }
