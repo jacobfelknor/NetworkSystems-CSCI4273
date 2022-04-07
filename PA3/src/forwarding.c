@@ -124,6 +124,7 @@ int get_socket(char *hostname, int port)
         if (hostBlocked(ip) || hostBlocked(hostname))
         {
             // on blocked host, return -2
+            free(ip);
             return -2;
         }
         free(ip);
