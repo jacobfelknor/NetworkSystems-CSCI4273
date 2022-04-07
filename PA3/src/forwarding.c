@@ -63,7 +63,9 @@ int get_socket(char *hostname, int port)
     host = gethostbyname(hostname);
     if (host == NULL)
     {
-        error("no such host");
+        // error("no such host");
+        // on dns lookup failure, return -1
+        return -1;
     }
 
     /* build the server's Internet address */
@@ -94,6 +96,12 @@ void http_forward(int connfd, char *responseBuffer, long *responseSize, char *re
 
     // get a socket for use to use to communicate to the webserver
     int sockfd = get_socket(hostname, port);
+    if (sockfd == -1)
+    {
+        // get_socket failed in gethostbyname. Return 400 Bad Request per lab instructions
+        *responseSize = buildResponse(responseBuffer, httpVersion, "400 Bad Request", "text/html", 0);
+        return;
+    }
 
     // setup complete. Send request and capture the response
     char *myrequest = (char *)malloc(MAX_REQUEST_LENGTH);
