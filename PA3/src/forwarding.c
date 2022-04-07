@@ -41,6 +41,28 @@ void split_url(char *requestPath, char *host, int *port, char *page)
 bool hostBlocked(char *host)
 {
     // open blocklist, search file for host, then return if I find it
+    FILE *blocklist = fopen("blocklist", "r");
+    char *found = NULL;
+    if (blocklist == NULL)
+    {
+        // the file either DNE or cannot be read. Won't block anything in this case
+        return false;
+    }
+    else
+    {
+        // put file into memory. Makes finding the hosts easier.
+        long fileSize = getFileSize(blocklist);
+        if (fileSize > 0)
+        {
+            char *fileBuffer = (char *)malloc(fileSize);
+            putFileInBuffer(fileBuffer, fileSize, blocklist);
+            // use strstr to attempt to find the substring
+            found = strstr(fileBuffer, host);
+            bool block = (found != NULL);
+            free(fileBuffer);
+            return block;
+        }
+    }
     return false;
 }
 
@@ -98,7 +120,7 @@ int get_socket(char *hostname, int port)
     else
     {
         char *ip = host2ip(host);
-        printf("%s\n", ip);
+        printf("%s (%s)\n", hostname, ip);
         if (hostBlocked(ip) || hostBlocked(hostname))
         {
             // on blocked host, return -2
