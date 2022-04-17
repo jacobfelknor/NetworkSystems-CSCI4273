@@ -24,6 +24,7 @@ int main(int argc, char **argv)
     // struct hostent *server;
     char *hostname;
     char *cmd;
+    char *filename;
     char responseBuffer[RESPONSE_BUFFER_SIZE];
 
     /* check command line arguments */
@@ -34,20 +35,47 @@ int main(int argc, char **argv)
     }
 
     cmd = argv[1];
+    // TODO: handle multiple files
+    filename = argv[2];
 
     hostname = "localhost";
     port = 8000;
 
     sockfd = get_socket(hostname, port);
 
+    if (strcmp(cmd, "put") == 0)
+    {
+        // put some file to servers
+        FILE *fp = fopen(filename, "rb");
+        if (fp != NULL)
+        {
+            long fsize = putFileInBuffer(responseBuffer, RESPONSE_BUFFER_SIZE, fp);
+            // split file into 4 parts
+            long chunkSize = fsize / 4;
+            long lastChunkSize = fsize - 3 * chunkSize;
+            char *chunk1 = responseBuffer;
+            char *chunk2 = chunk1 + chunkSize;
+            char *chunk3 = chunk2 + chunkSize;
+            char *chunk4 = chunk3 + chunkSize;
+
+            writeToSocket(sockfd, chunk1, chunkSize);
+            writeToSocket(sockfd, chunk2, chunkSize);
+            writeToSocket(sockfd, chunk3, chunkSize);
+            writeToSocket(sockfd, chunk4, lastChunkSize);
+        }
+        else
+        {
+            error("File could not be opened. DNE or insufficient permissions");
+        }
+    }
     // write the cmd to the dfs
-    writeToSocket(sockfd, cmd, strlen(cmd));
+    // writeToSocket(sockfd, cmd, strlen(cmd));
 
     // read the reply from the dfs
-    readFromSocket(sockfd, responseBuffer, RESPONSE_BUFFER_SIZE);
+    // readFromSocket(sockfd, responseBuffer, RESPONSE_BUFFER_SIZE);
 
     // print the reply
-    printf("%s\n", responseBuffer);
+    // printf("%s\n", responseBuffer);
 
     close(sockfd);
 }

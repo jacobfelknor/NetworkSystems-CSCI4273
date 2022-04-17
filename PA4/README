@@ -12,3 +12,7 @@ Usage:
 
 Assumptions:
     
+
+Plan:
+    split file into 4 equal parts (with one having some remainder)
+    name them filename.ext.(1|2|3|4)

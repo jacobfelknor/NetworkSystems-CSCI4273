@@ -19,7 +19,7 @@ long getFileSize(FILE *f)
     return fsize;
 }
 
-void putFileInBuffer(char *buf, int bufsize, FILE *f)
+long putFileInBuffer(char *buf, int bufsize, FILE *f)
 {
     // clear buffer first
     bzero(buf, bufsize);
@@ -37,6 +37,8 @@ void putFileInBuffer(char *buf, int bufsize, FILE *f)
     {
         error("error on fread..\n");
     }
+
+    return fsize;
 }
 
 void putBufferInFile(char *buf, int bufsize, FILE *f)

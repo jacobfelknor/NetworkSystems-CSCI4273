@@ -17,7 +17,7 @@
 
 void error(char *msg);
 
-void putFileInBuffer(char *buf, int bufsize, FILE *f);
+long putFileInBuffer(char *buf, int bufsize, FILE *f);
 void putBufferInFile(char *buf, int bufsize, FILE *f);
 
 long getFileSize(FILE *f);
