@@ -1,0 +1,14 @@
+to build the project:
+    make
+
+remove binaries:
+    make clean
+
+binary stored in ./bin/dfc, ./bin/dfs
+
+Usage: 
+    ./bin/dfc <command> [filename] ... [filename]
+    ./bin/dfs <directory> <port>
+
+Assumptions:
+    

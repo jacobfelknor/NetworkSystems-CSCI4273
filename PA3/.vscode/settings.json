@@ -3,6 +3,7 @@
         "netdb.h": "c",
         "utils.h": "c",
         "str_utils.h": "c",
-        "md5.h": "c"
+        "md5.h": "c",
+        "forwarding.h": "c"
     }
 }
