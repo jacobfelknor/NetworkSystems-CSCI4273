@@ -16,3 +16,8 @@ Assumptions:
 Plan:
     split file into 4 equal parts (with one having some remainder)
     name them filename.ext.(1|2|3|4)
+
+    server looks a lot like webserver. Parse the request from user
+    and respond accordingly. Start with PUT
+
+    PUT filename.1 123\r\n\r\n  --> save the next 123 bytes to filename.1

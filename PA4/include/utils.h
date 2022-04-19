@@ -12,8 +12,7 @@
 #include <sys/time.h>
 #include <errno.h>
 
-#define RESPONSE_FILE_BUFFER 1048576
-#define RESPONSE_BUFFER_SIZE RESPONSE_FILE_BUFFER + 100
+#define BUFFER_SIZE 1048576
 
 void error(char *msg);
 

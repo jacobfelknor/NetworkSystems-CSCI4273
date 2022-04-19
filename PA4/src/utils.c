@@ -57,7 +57,7 @@ void putBufferInFile(char *buf, int bufsize, FILE *f)
 void sendRequest(int connfd, char *responseBuffer, long responseSize)
 {
     // double check responseSize fits in buffer
-    if (responseSize > RESPONSE_BUFFER_SIZE)
+    if (responseSize > BUFFER_SIZE)
     {
         error("response would not fit in buffer");
     }

@@ -37,21 +37,7 @@ int get_socket(char *hostname, int port)
     host = gethostbyname(hostname);
     if (host == NULL)
     {
-        // error("no such host");
-        // on dns lookup failure, return -1
-        return -1;
-    }
-    else
-    {
-        // char *ip = host2ip(host);
-        // printf("%s (%s)\n", hostname, ip);
-        // if (hostBlocked(ip) || hostBlocked(hostname))
-        // {
-        //     // on blocked host, return -2
-        //     free(ip);
-        //     return -2;
-        // }
-        // free(ip);
+        error("no such host");
     }
 
     /* build the server's Internet address */
@@ -94,4 +80,17 @@ void readFromSocket(int sockfd, char *buffer, int size)
             error("Buffer too small to read from socket");
         }
     }
+}
+
+// send a chunk of a file to a server
+void sendChunk(int sockfd, char *filename, int id, char *chunk, int chunkSize)
+{
+    int MAX_LEN = 1000;
+    char serverPutCMD[MAX_LEN];
+    bzero(serverPutCMD, MAX_LEN);
+
+    // chunk 1 & 2 go to server 1
+    snprintf(serverPutCMD, MAX_LEN, "PUT %s.%d %d\r\n\r\n", filename, id, chunkSize);
+    writeToSocket(sockfd, serverPutCMD, strlen(serverPutCMD));
+    writeToSocket(sockfd, chunk, chunkSize);
 }
