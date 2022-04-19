@@ -77,7 +77,7 @@ void request2buffer(int connfd, char *buf, int bufsize)
 }
 
 // get my custom request
-void parseRequest(char *request, char *cmd, char *filename, int *chunkSize)
+void parseRequest(char **request, char *cmd, char *filename, int *chunkSize)
 {
     // For these 3 pieces of information, only the first line is required.
     int lineSize = 300;
@@ -86,7 +86,7 @@ void parseRequest(char *request, char *cmd, char *filename, int *chunkSize)
     char chunkSizeChar[100]; // should be plenty long
 
     // get first line, set request to location where file contents start
-    request = sgets(firstLine, lineSize, &request);
+    *request = sgets(firstLine, lineSize, request);
 
     char *parts[] = {cmd, filename, chunkSizeChar};
     int part = 0;

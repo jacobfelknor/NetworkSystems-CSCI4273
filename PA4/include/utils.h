@@ -20,4 +20,4 @@ long putFileInBuffer(char *buf, int bufsize, FILE *f);
 void putBufferInFile(char *buf, int bufsize, FILE *f);
 void request2buffer(int connfd, char *buf, int bufsize);
 long getFileSize(FILE *f);
-void parseRequest(char *request, char *cmd, char *filename, int *chunkSize);
+void parseRequest(char **request, char *cmd, char *filename, int *chunkSize);

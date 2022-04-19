@@ -118,7 +118,7 @@ int main(int argc, char **argv)
         // readFromSocket(connfd, request, BUFFER_SIZE);
         // printf("%s\n", request);
         request2buffer(connfd, request, BUFFER_SIZE);
-        parseRequest(request, cmd, filename, &chunkSize);
+        parseRequest(&request, cmd, filename, &chunkSize);
 
         printf("cmd: %s, filename: %s, chunkSize: %d\n", cmd, filename, chunkSize);
 
