@@ -11,6 +11,17 @@
 
 #include "../include/socket.h"
 
+extern int errno;
+
+/*
+ * error - wrapper for perror
+ */
+void error(char *msg)
+{
+    perror(msg);
+    exit(1);
+}
+
 int get_socket(char *hostname, int port)
 {
     int sockfd;                    /* socket */

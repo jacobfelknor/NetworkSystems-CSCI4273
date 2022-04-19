@@ -1,16 +1,5 @@
 #include "../include/utils.h"
 
-extern int errno;
-
-/*
- * error - wrapper for perror
- */
-void error(char *msg)
-{
-    perror(msg);
-    exit(1);
-}
-
 long getFileSize(FILE *f)
 {
     fseek(f, 0, SEEK_END);
@@ -53,31 +42,79 @@ void putBufferInFile(char *buf, int bufsize, FILE *f)
     }
 }
 
-// send the response
-void sendRequest(int connfd, char *responseBuffer, long responseSize)
+// https://stackoverflow.com/a/20300544
+// get a line from a buffer
+// return place in buffer where I left off
+char *sgets(char *s, int n, char **strp)
 {
-    // double check responseSize fits in buffer
-    if (responseSize > BUFFER_SIZE)
+    if (**strp == '\0')
+        return NULL;
+    int i;
+    for (i = 0; i < n - 1; ++i, ++(*strp))
     {
-        error("response would not fit in buffer");
-    }
-    // keep track of how many bytes we've sent so far
-    long bytesSent = 0;
-    while (bytesSent < responseSize) // only exit loop once we've sent all the bytes
-    {
-        // how many were sent on this iteration?
-        // want to send bytes starting at offset bytesSent, and send the difference between the total and sent so far
-        long n = write(connfd, responseBuffer + bytesSent, responseSize - bytesSent);
-        if (n < 0)
+        s[i] = **strp;
+        if (**strp == '\0')
+            break;
+        if (**strp == '\n')
         {
-            // error writing to socket. Exit
-            error("error on write");
+            s[i + 1] = '\0';
+            ++(*strp);
+            break;
+        }
+    }
+    if (i == n - 1)
+        s[i] = '\0';
+    return *strp;
+}
+
+// copy the web request string into the given buffer
+void request2buffer(int connfd, char *buf, int bufsize)
+{
+    // clear any existing data
+    bzero(buf, bufsize);
+    // store request in our buffer
+    readFromSocket(connfd, buf, bufsize);
+}
+
+// get my custom request
+void parseRequest(char *request, char *cmd, char *filename, int *chunkSize)
+{
+    // For these 3 pieces of information, only the first line is required.
+    int lineSize = 300;
+    char firstLine[lineSize]; // should be plenty long
+    // need a char version of chunkSize too
+    char chunkSizeChar[100]; // should be plenty long
+
+    // get first line, set request to location where file contents start
+    request = sgets(firstLine, lineSize, &request);
+
+    char *parts[] = {cmd, filename, chunkSizeChar};
+    int part = 0;
+    int j = 0;
+    // split string into parts by space
+    for (int i = 0; i <= strlen(firstLine); i++)
+    {
+        if (part > 2)
+        {
+            // reached the end of available parts. If its not done, we can't parse this http request
+            break;
+        }
+        // adapted from includehelp.com/c-programs/c-program-to-split-string-by-space-into-words.aspx
+        if (firstLine[i] == ' ' || firstLine[i] == '\0')
+        {
+            parts[part][j] = '\0';
+            part++; // for next part
+            j = 0;  // for next part, init index to 0
         }
         else
         {
-            // we sent n bytes. Increment our counter
-            bytesSent += n;
-            printf("Sent %ld/%ld bytes\n", bytesSent, responseSize);
+            parts[part][j] = firstLine[i];
+            j++;
         }
     }
+
+    // at this point, replace the newline if it exists from the httpVersion
+    chunkSizeChar[strcspn(chunkSizeChar, "\n")] = 0;
+    chunkSizeChar[strcspn(chunkSizeChar, "\r")] = 0;
+    *chunkSize = atoi(chunkSizeChar);
 }
