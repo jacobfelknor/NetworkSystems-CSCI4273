@@ -137,3 +137,29 @@ char *pathConcat(char *path1, char *path2)
     strcat(result, path2);
     return result;
 }
+
+void serverPutFile(char *request, char *cmd, char *dir, char *filename, int chunkSize)
+{
+    // make the dir if needed
+    mkdir(dir, 0775);
+    // do the first chunk. The main function has already parsed the first request
+    // we can start right away
+    char *path = pathConcat(dir, filename);
+    printf("cmd: %s, path: %s, chunkSize: %d\n", cmd, path, chunkSize);
+    FILE *fp;
+    fp = fopen(path, "wb");
+    fwrite(request, chunkSize, 1, fp);
+    fclose(fp);
+
+    // do the second chunk. The above will leave us with the second request
+    // ready to read and use. Should always be PUT...
+    // this is assuming 2 chunks sent in pairs, as write up suggests. Is not flexible
+    request += chunkSize;
+    parseRequest(&request, cmd, filename, &chunkSize);
+    path = pathConcat(dir, filename);
+    printf("cmd: %s, path: %s, chunkSize: %d\n", cmd, path, chunkSize);
+    fp = fopen(path, "wb");
+    fwrite(request, chunkSize, 1, fp);
+    fclose(fp);
+    free(path);
+}

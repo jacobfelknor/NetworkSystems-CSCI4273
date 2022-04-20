@@ -112,37 +112,24 @@ int main(int argc, char **argv)
         {
             char cmd[100];
             char filename[100];
-            char *path;
             int chunkSize;
 
-            // I'm the child. Service the request
+            // I'm the child. Service the request. Parse the first line to figure out where to start
             request2buffer(connfd, request, BUFFER_SIZE);
             parseRequest(&request, cmd, filename, &chunkSize);
-            path = pathConcat(dir, filename);
 
-            printf("cmd: %s, path: %s, chunkSize: %d\n", cmd, path, chunkSize);
-            FILE *fp;
-            fp = fopen(path, "wb");
-            fwrite(request, chunkSize, 1, fp);
-            fclose(fp);
-
-            // do the second chunk
-            request += chunkSize;
-            parseRequest(&request, cmd, filename, &chunkSize);
-            path = pathConcat(dir, filename);
-
-            printf("cmd: %s, path: %s, chunkSize: %d\n", cmd, path, chunkSize);
-            // FILE *fp;
-            fp = fopen(path, "wb");
-            fwrite(request, chunkSize, 1, fp);
-            fclose(fp);
+            if (strcmp(cmd, "PUT") == 0)
+            {
+                // put command recieved from client.
+                serverPutFile(request, cmd, dir, filename, chunkSize);
+            }
 
             // close the connection after request is serviced
             close(connfd);
 
             // free memory
             free(requestMemory);
-            free(path);
+
             break; // break out of the infinite loop and exit
         }
     }
