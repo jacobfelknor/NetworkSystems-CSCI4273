@@ -17,15 +17,16 @@
 
 int main(int argc, char **argv)
 {
-    int sockfd;                                  /* socket */
-    int connfd;                                  /* connection */
-    int portno;                                  /* port to listen on */
-    socklen_t clientlen;                         /* byte size of client's address */
-    struct sockaddr_in serveraddr;               /* server's addr */
-    struct sockaddr_in clientaddr;               /* client addr */
-    char *request = (char *)malloc(BUFFER_SIZE); /* message request */
-    int optval;                                  /* flag value for setsockopt */
-    // char *dir;                     /* directory to store files */
+    int sockfd;                                        /* socket */
+    int connfd;                                        /* connection */
+    int portno;                                        /* port to listen on */
+    socklen_t clientlen;                               /* byte size of client's address */
+    struct sockaddr_in serveraddr;                     /* server's addr */
+    struct sockaddr_in clientaddr;                     /* client addr */
+    char *requestMemory = (char *)malloc(BUFFER_SIZE); /* message request */
+    char *request = requestMemory;
+    int optval; /* flag value for setsockopt */
+    char *dir;  /* directory to store files */
 
     /*
      * check command line arguments
@@ -35,7 +36,7 @@ int main(int argc, char **argv)
         fprintf(stderr, "usage: %s <directory> <port>\n", argv[0]);
         exit(1);
     }
-    // dir = argv[1];
+    dir = argv[1];
     portno = atoi(argv[2]);
 
     /*
@@ -111,18 +112,19 @@ int main(int argc, char **argv)
         // {
         char cmd[100];
         char filename[100];
+        char *path;
         int chunkSize;
 
         // I'm the child. Service the request
         // copy request string into our buffer
         // readFromSocket(connfd, request, BUFFER_SIZE);
-        // printf("%s\n", request);
         request2buffer(connfd, request, BUFFER_SIZE);
         parseRequest(&request, cmd, filename, &chunkSize);
+        path = pathConcat(dir, filename);
 
-        printf("cmd: %s, filename: %s, chunkSize: %d\n", cmd, filename, chunkSize);
+        printf("cmd: %s, path: %s, chunkSize: %d\n", cmd, path, chunkSize);
         FILE *fp;
-        fp = fopen(filename, "wb");
+        fp = fopen(path, "wb");
         fwrite(request, chunkSize, 1, fp);
         fclose(fp);
 
@@ -130,7 +132,8 @@ int main(int argc, char **argv)
         close(connfd);
 
         // free memory
-        free(request);
+        free(requestMemory);
+        free(path);
         break; // break out of the infinite loop and exit
         // }
     }

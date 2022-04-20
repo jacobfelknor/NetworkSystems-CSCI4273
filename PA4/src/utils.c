@@ -118,3 +118,22 @@ void parseRequest(char **request, char *cmd, char *filename, int *chunkSize)
     chunkSizeChar[strcspn(chunkSizeChar, "\r")] = 0;
     *chunkSize = atoi(chunkSizeChar);
 }
+
+// https://stackoverflow.com/a/8465083
+char *pathConcat(char *path1, char *path2)
+{
+    char *result = malloc(strlen(path1) + strlen(path2) + 2); // +1 for the null-terminator, +1 for the possible "/"
+    // in real code you would check for errors in malloc here
+    strcpy(result, path1);
+    if (path2[0] == '.')
+    {
+        // assume path given is like ./path/to/file
+        path2 += 1;
+    }
+    if (result[strlen(path1)] != '/' && path2[0] != '/')
+    {
+        strcat(result, "/");
+    }
+    strcat(result, path2);
+    return result;
+}

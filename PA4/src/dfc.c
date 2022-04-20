@@ -20,6 +20,7 @@ int main(int argc, char **argv)
 
     int socks[] = {0, 0, 0, 0};
     char *cmd;
+    char *path;
     char *filename;
     char buffer[BUFFER_SIZE];
 
@@ -32,7 +33,12 @@ int main(int argc, char **argv)
 
     cmd = argv[1];
     // TODO: handle multiple files
-    filename = argv[2];
+    path = argv[2];
+    filename = strrchr(path, '/');
+    if (filename == NULL)
+    {
+        filename = path;
+    }
 
     // TODO: read in dfc.conf, set up connections to servers
     char *server = "localhost";
@@ -45,7 +51,7 @@ int main(int argc, char **argv)
     if (strcmp(cmd, "put") == 0)
     {
         // put some file to servers
-        FILE *fp = fopen(filename, "rb");
+        FILE *fp = fopen(path, "rb");
         if (fp != NULL)
         {
             long fsize = putFileInBuffer(buffer, BUFFER_SIZE, fp);

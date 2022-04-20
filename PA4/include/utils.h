@@ -21,3 +21,4 @@ void putBufferInFile(char *buf, int bufsize, FILE *f);
 void request2buffer(int connfd, char *buf, int bufsize);
 long getFileSize(FILE *f);
 void parseRequest(char **request, char *cmd, char *filename, int *chunkSize);
+char *pathConcat(char *s1, char *s2);
