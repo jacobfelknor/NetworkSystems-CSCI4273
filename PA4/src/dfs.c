@@ -96,54 +96,54 @@ int main(int argc, char **argv)
             error("server accept failed...\n");
         }
 
-        // if ((pid = fork()) == -1)
-        // {
-        //     close(connfd);
-        //     continue;
-        // }
-        // else if (pid > 0)
-        // {
-        //     // I'm the parent
-        //     close(connfd);            // child owns this connection now
-        //     signal(SIGCHLD, SIG_IGN); // ignore child's signal, reap automatically
-        //     continue;
-        // }
-        // else if (pid == 0)
-        // {
-        char cmd[100];
-        char filename[100];
-        char *path;
-        int chunkSize;
+        if ((pid = fork()) == -1)
+        {
+            close(connfd);
+            continue;
+        }
+        else if (pid > 0)
+        {
+            // I'm the parent
+            close(connfd);            // child owns this connection now
+            signal(SIGCHLD, SIG_IGN); // ignore child's signal, reap automatically
+            continue;
+        }
+        else if (pid == 0)
+        {
+            char cmd[100];
+            char filename[100];
+            char *path;
+            int chunkSize;
 
-        // I'm the child. Service the request
-        request2buffer(connfd, request, BUFFER_SIZE);
-        parseRequest(&request, cmd, filename, &chunkSize);
-        path = pathConcat(dir, filename);
+            // I'm the child. Service the request
+            request2buffer(connfd, request, BUFFER_SIZE);
+            parseRequest(&request, cmd, filename, &chunkSize);
+            path = pathConcat(dir, filename);
 
-        printf("cmd: %s, path: %s, chunkSize: %d\n", cmd, path, chunkSize);
-        FILE *fp;
-        fp = fopen(path, "wb");
-        fwrite(request, chunkSize, 1, fp);
-        fclose(fp);
+            printf("cmd: %s, path: %s, chunkSize: %d\n", cmd, path, chunkSize);
+            FILE *fp;
+            fp = fopen(path, "wb");
+            fwrite(request, chunkSize, 1, fp);
+            fclose(fp);
 
-        // do the second chunk
-        request += chunkSize;
-        parseRequest(&request, cmd, filename, &chunkSize);
-        path = pathConcat(dir, filename);
+            // do the second chunk
+            request += chunkSize;
+            parseRequest(&request, cmd, filename, &chunkSize);
+            path = pathConcat(dir, filename);
 
-        printf("cmd: %s, path: %s, chunkSize: %d\n", cmd, path, chunkSize);
-        // FILE *fp;
-        fp = fopen(path, "wb");
-        fwrite(request, chunkSize, 1, fp);
-        fclose(fp);
+            printf("cmd: %s, path: %s, chunkSize: %d\n", cmd, path, chunkSize);
+            // FILE *fp;
+            fp = fopen(path, "wb");
+            fwrite(request, chunkSize, 1, fp);
+            fclose(fp);
 
-        // close the connection after request is serviced
-        close(connfd);
+            // close the connection after request is serviced
+            close(connfd);
 
-        // free memory
-        free(requestMemory);
-        free(path);
-        break; // break out of the infinite loop and exit
-        // }
+            // free memory
+            free(requestMemory);
+            free(path);
+            break; // break out of the infinite loop and exit
+        }
     }
 }
