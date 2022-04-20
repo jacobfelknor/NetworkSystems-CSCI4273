@@ -34,9 +34,10 @@ int main(int argc, char **argv)
     cmd = argv[1];
     // TODO: handle multiple files
     path = argv[2];
-    filename = strrchr(path, '/');
+    filename = strrchr(path, '/'); // want the base filename when uploading to the server
     if (filename == NULL)
     {
+        // path did not include '/'. The path is the filename (assuming the cwd)
         filename = path;
     }
 

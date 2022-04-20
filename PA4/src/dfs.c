@@ -116,14 +116,23 @@ int main(int argc, char **argv)
         int chunkSize;
 
         // I'm the child. Service the request
-        // copy request string into our buffer
-        // readFromSocket(connfd, request, BUFFER_SIZE);
         request2buffer(connfd, request, BUFFER_SIZE);
         parseRequest(&request, cmd, filename, &chunkSize);
         path = pathConcat(dir, filename);
 
         printf("cmd: %s, path: %s, chunkSize: %d\n", cmd, path, chunkSize);
         FILE *fp;
+        fp = fopen(path, "wb");
+        fwrite(request, chunkSize, 1, fp);
+        fclose(fp);
+
+        // do the second chunk
+        request += chunkSize;
+        parseRequest(&request, cmd, filename, &chunkSize);
+        path = pathConcat(dir, filename);
+
+        printf("cmd: %s, path: %s, chunkSize: %d\n", cmd, path, chunkSize);
+        // FILE *fp;
         fp = fopen(path, "wb");
         fwrite(request, chunkSize, 1, fp);
         fclose(fp);
