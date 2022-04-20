@@ -121,6 +121,10 @@ int main(int argc, char **argv)
         parseRequest(&request, cmd, filename, &chunkSize);
 
         printf("cmd: %s, filename: %s, chunkSize: %d\n", cmd, filename, chunkSize);
+        FILE *fp;
+        fp = fopen(filename, "wb");
+        fwrite(request, chunkSize, 1, fp);
+        fclose(fp);
 
         // close the connection after request is serviced
         close(connfd);

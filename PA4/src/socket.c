@@ -101,7 +101,7 @@ void sendChunk(int sockfd, char *filename, int id, char *chunk, int chunkSize)
     bzero(serverPutCMD, MAX_LEN);
 
     // chunk 1 & 2 go to server 1
-    snprintf(serverPutCMD, MAX_LEN, "PUT %s.%d %d\r\n\r\n", filename, id, chunkSize);
+    snprintf(serverPutCMD, MAX_LEN, "PUT %s.%d %d\r\n", filename, id, chunkSize);
     writeToSocket(sockfd, serverPutCMD, strlen(serverPutCMD));
     writeToSocket(sockfd, chunk, chunkSize);
 }

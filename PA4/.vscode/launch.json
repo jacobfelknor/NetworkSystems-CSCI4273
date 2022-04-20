@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/bin/dfs",
             "args": [
-                "./dfsdebug",
+                "./dfs1",
                 "8000"
             ],
             "stopAtEntry": false,
