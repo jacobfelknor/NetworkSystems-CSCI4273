@@ -121,7 +121,7 @@ int main(int argc, char **argv)
         if (strcmp(cmd, "PUT") == 0)
         {
             // put command recieved from client.
-            serverPutFile(request, cmd, dir, filename, chunkSize);
+            serverPutFile(connfd, request, cmd, dir, filename, chunkSize);
         }
         else if (strcmp(cmd, "GET") == 0)
         {

@@ -22,5 +22,5 @@ void request2buffer(int connfd, char *buf, int bufsize);
 long getFileSize(FILE *f);
 void parseRequest(char **request, char *cmd, char *filename, int *chunkSize);
 char *pathConcat(char *s1, char *s2);
-void serverPutFile(char *request, char *cmd, char *dir, char *filename, int chunkSize);
+void serverPutFile(int sockfd, char *request, char *cmd, char *dir, char *filename, int chunkSize);
 void clientPutFile(char *path, char *buffer, int *socks, char *filename);

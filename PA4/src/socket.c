@@ -77,7 +77,22 @@ void writeToSocket(int sockfd, char *buffer, int size)
     }
 }
 
-void readFromSocket(int sockfd, char *buffer, int size)
+void readFromSocket(int sockfd, char *buffer, int bytesToRead)
+{
+    int bytesRead = 0;
+    int chunk;
+    while (1)
+    {
+        chunk = read(sockfd, buffer + bytesRead, bytesToRead - bytesRead);
+        bytesRead += chunk;
+        if (bytesRead >= bytesToRead)
+        {
+            break;
+        }
+    }
+}
+
+void readFromSocketUntilClose(int sockfd, char *buffer, int size)
 {
     // this function assumes the server will close the connection once done sending bytes
     int bytesRead = 0;
@@ -101,11 +116,15 @@ void readLineFromSocket(int sockfd, char *buffer, int size)
     while (chunk > 0)
     {
         chunk = read(sockfd, buffer + bytesRead, 1);
-        if (strcmp(buffer, "\r\n") == 0)
+        if (strstr(buffer, "\r\n"))
         {
             break;
         }
         bytesRead += chunk;
+        if (bytesRead > size)
+        {
+            error("Buffer too small to read line from socket");
+        }
     }
 }
 

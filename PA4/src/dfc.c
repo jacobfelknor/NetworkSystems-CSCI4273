@@ -84,7 +84,7 @@ int main(int argc, char **argv)
             snprintf(serverGetCMD, MAX_LEN, "GET %s.%d\r\n", filename, i);
             writeToSocket(socks[0], serverGetCMD, strlen(serverGetCMD));
         }
-        readFromSocket(socks[0], chunks[0], BUFFER_SIZE);
+        // readFromSocket(socks[0], chunks[0], BUFFER_SIZE);
         printf("%s\n", chunks[0]);
         free(chunk1);
         free(chunk2);

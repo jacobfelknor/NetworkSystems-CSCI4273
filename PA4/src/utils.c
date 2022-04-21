@@ -73,7 +73,8 @@ void request2buffer(int connfd, char *buf, int bufsize)
     // clear any existing data
     bzero(buf, bufsize);
     // store request in our buffer
-    readFromSocket(connfd, buf, bufsize);
+    // readFromSocket(connfd, buf, bufsize);
+    readLineFromSocket(connfd, buf, bufsize);
 }
 
 // get my custom request
@@ -140,30 +141,34 @@ char *pathConcat(char *path1, char *path2)
     return result;
 }
 
-void serverPutFile(char *request, char *cmd, char *dir, char *filename, int chunkSize)
+void serverPutFile(int sockfd, char *request, char *cmd, char *dir, char *filename, int chunkSize)
 {
     // make the dir if needed
     mkdir(dir, 0775);
     // do the first chunk. The main function has already parsed the first request
     // we can start right away
+    // need to read chunkSize bytes from socket now.
+    char *chunk = (char *)malloc(chunkSize);
+    readFromSocket(sockfd, chunk, chunkSize);
     char *path = pathConcat(dir, filename);
     printf("cmd: %s, path: %s, chunkSize: %d\n", cmd, path, chunkSize);
     FILE *fp;
     fp = fopen(path, "wb");
-    fwrite(request, chunkSize, 1, fp);
+    fwrite(chunk, chunkSize, 1, fp);
     fclose(fp);
 
-    // do the second chunk. The above will leave us with the second request
-    // ready to read and use. Should always be PUT...
+    // do the second chunk.
     // this is assuming 2 chunks sent in pairs, as write up suggests. Is not flexible
-    request += chunkSize;
+    request2buffer(sockfd, request, BUFFER_SIZE);
     parseRequest(&request, cmd, filename, &chunkSize);
+    readFromSocket(sockfd, chunk, chunkSize);
     path = pathConcat(dir, filename);
     printf("cmd: %s, path: %s, chunkSize: %d\n", cmd, path, chunkSize);
     fp = fopen(path, "wb");
-    fwrite(request, chunkSize, 1, fp);
+    fwrite(chunk, chunkSize, 1, fp);
     fclose(fp);
     free(path);
+    free(chunk);
 }
 
 void clientPutFile(char *path, char *buffer, int *socks, char *filename)
