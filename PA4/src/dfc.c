@@ -79,20 +79,38 @@ int main(int argc, char **argv)
         bzero(chunk4, BUFFER_SIZE);
         char *chunks[] = {chunk1, chunk2, chunk3, chunk4};
 
-        // ask server 1
+        // ask each server for each chunk, see what they return
         int MAX_LEN = 1000;
         char serverGetCMD[MAX_LEN];
-        for (int i = 1; i < 5; i++)
+        for (int j = 0; j < 4; j++)
         {
-            bzero(serverGetCMD, MAX_LEN);
-            snprintf(serverGetCMD, MAX_LEN, "GET %s.%d\r\n", filename, i);
-            writeToSocket(socks[0], serverGetCMD, strlen(serverGetCMD));
-            readFromSocket(socks[0], chunks[i - 1], 250);
-            printf("%s\n", chunks[i - 1]);
-            // close and reopen connection to make a new request
-            close(socks[0]);
-            socks[0] = get_socket(server, ports[0]);
+
+            for (int i = 1; i < 5; i++)
+            {
+                bzero(serverGetCMD, MAX_LEN);
+                snprintf(serverGetCMD, MAX_LEN, "GET %s.%d\r\n", filename, i);
+                writeToSocket(socks[j], serverGetCMD, strlen(serverGetCMD));
+                // TODO: I'm locking the chunksize returned at 250 because I know this file. GENERALIZE!!!!!!!!
+                // also, write to a temp buffer first. If the temp bytes are still null after
+                // reading, we know the server didn't have that file and so we shouldn't copy it to the chunk buffer
+                readFromSocket(socks[j], chunks[i - 1], 250);
+                // printf("%s\n", chunks[i - 1]);
+                // close and reopen connection to make a new request
+                close(socks[j]);
+                socks[j] = get_socket(server, ports[j]);
+            }
         }
+
+        // now write the file to disk
+        // TODO: instead of blindly writing, check if chunk is all NULL, meaning the file is incomplete
+        FILE *fp = fopen("recieved_file", "wb");
+        fwrite(chunk1, 250, 1, fp);
+        fwrite(chunk2, 250, 1, fp);
+        fwrite(chunk3, 250, 1, fp);
+        fwrite(chunk4, 250, 1, fp);
+        fclose(fp);
+
+        // free memory
         free(chunk1);
         free(chunk2);
         free(chunk3);
