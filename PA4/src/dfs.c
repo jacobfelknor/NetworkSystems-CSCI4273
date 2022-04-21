@@ -96,41 +96,51 @@ int main(int argc, char **argv)
             error("server accept failed...\n");
         }
 
-        if ((pid = fork()) == -1)
+        // if ((pid = fork()) == -1)
+        // {
+        //     close(connfd);
+        //     continue;
+        // }
+        // else if (pid > 0)
+        // {
+        //     // I'm the parent
+        //     close(connfd);            // child owns this connection now
+        //     signal(SIGCHLD, SIG_IGN); // ignore child's signal, reap automatically
+        //     continue;
+        // }
+        // else if (pid == 0)
+        // {
+        char cmd[100];
+        char filename[100];
+        int chunkSize;
+
+        // I'm the child. Service the request. Parse the first line to figure out where to start
+        request2buffer(connfd, request, BUFFER_SIZE);
+        parseRequest(&request, cmd, filename, &chunkSize);
+
+        if (strcmp(cmd, "PUT") == 0)
         {
-            close(connfd);
-            continue;
+            // put command recieved from client.
+            serverPutFile(request, cmd, dir, filename, chunkSize);
         }
-        else if (pid > 0)
+        else if (strcmp(cmd, "GET") == 0)
         {
-            // I'm the parent
-            close(connfd);            // child owns this connection now
-            signal(SIGCHLD, SIG_IGN); // ignore child's signal, reap automatically
-            continue;
+            // for get, we don't want to jump ahead
+            request = requestMemory;
+            char *response = (char *)malloc(BUFFER_SIZE);
+            char *path = pathConcat(dir, filename);
+            FILE *fp = fopen(path, "rb");
+            long fileSize = putFileInBuffer(response, BUFFER_SIZE, fp);
+            writeToSocket(connfd, response, fileSize);
         }
-        else if (pid == 0)
-        {
-            char cmd[100];
-            char filename[100];
-            int chunkSize;
 
-            // I'm the child. Service the request. Parse the first line to figure out where to start
-            request2buffer(connfd, request, BUFFER_SIZE);
-            parseRequest(&request, cmd, filename, &chunkSize);
+        // close the connection after request is serviced
+        close(connfd);
 
-            if (strcmp(cmd, "PUT") == 0)
-            {
-                // put command recieved from client.
-                serverPutFile(request, cmd, dir, filename, chunkSize);
-            }
+        // free memory
+        free(requestMemory);
 
-            // close the connection after request is serviced
-            close(connfd);
-
-            // free memory
-            free(requestMemory);
-
-            break; // break out of the infinite loop and exit
-        }
+        break; // break out of the infinite loop and exit
+        // }
     }
 }

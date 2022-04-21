@@ -54,6 +54,52 @@ int main(int argc, char **argv)
         // put some file to servers
         clientPutFile(path, buffer, socks, filename);
     }
+    else if (strcmp(cmd, "get") == 0)
+    {
+        // get files from server
+        // send a request GET filename\r\n
+        // sever will either respond with OK filename n\r\n<data>
+        // or will respond NOT FOUND\r\n or will timeout because its down.
+
+        // client stores each response from server in a buffer labeled for each chunk
+        // keep track if we have gotten a successful response and filled buffer for a certain chunk
+
+        // at the end, write buffers 1-4 out in order to a file
+        // bool chunk1Found = false;
+        // bool chunk2Found = false;
+        // bool chunk3Found = false;
+        // bool chunk4Found = false;
+        char *chunk1 = (char *)malloc(BUFFER_SIZE);
+        char *chunk2 = (char *)malloc(BUFFER_SIZE);
+        char *chunk3 = (char *)malloc(BUFFER_SIZE);
+        char *chunk4 = (char *)malloc(BUFFER_SIZE);
+        char *chunks[] = {chunk1, chunk2, chunk3, chunk4};
+
+        // ask server 1
+        int MAX_LEN = 1000;
+        char serverGetCMD[MAX_LEN];
+        for (int i = 1; i < 5; i++)
+        {
+            bzero(serverGetCMD, MAX_LEN);
+            snprintf(serverGetCMD, MAX_LEN, "GET %s.%d\r\n", filename, i);
+            writeToSocket(socks[0], serverGetCMD, strlen(serverGetCMD));
+        }
+        readFromSocket(socks[0], chunks[0], BUFFER_SIZE);
+        printf("%s\n", chunks[0]);
+        free(chunk1);
+        free(chunk2);
+        free(chunk3);
+        free(chunk4);
+    }
+    else if (strcmp(cmd, "list") == 0)
+    {
+        // list files from server
+    }
+    else
+    {
+        fprintf(stderr, "Invalid command '%s'. Must be 'put', 'get', or 'list'\n", cmd);
+        exit(0);
+    }
 
     close(socks[0]);
     close(socks[1]);

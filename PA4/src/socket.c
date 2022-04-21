@@ -93,6 +93,22 @@ void readFromSocket(int sockfd, char *buffer, int size)
     }
 }
 
+void readLineFromSocket(int sockfd, char *buffer, int size)
+{
+    // this function will read from socket until a new line
+    int bytesRead = 0;
+    int chunk = 1;
+    while (chunk > 0)
+    {
+        chunk = read(sockfd, buffer + bytesRead, 1);
+        if (strcmp(buffer, "\r\n") == 0)
+        {
+            break;
+        }
+        bytesRead += chunk;
+    }
+}
+
 // send a chunk of a file to a server
 void sendChunk(int sockfd, char *filename, int id, char *chunk, int chunkSize)
 {

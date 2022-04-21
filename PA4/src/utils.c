@@ -86,7 +86,7 @@ void parseRequest(char **request, char *cmd, char *filename, int *chunkSize)
     char chunkSizeChar[100]; // should be plenty long
 
     // get first line, set request to location where file contents start
-    *request = sgets(firstLine, lineSize, request);
+    sgets(firstLine, lineSize, request);
 
     char *parts[] = {cmd, filename, chunkSizeChar};
     int part = 0;
@@ -113,9 +113,11 @@ void parseRequest(char **request, char *cmd, char *filename, int *chunkSize)
         }
     }
 
-    // at this point, replace the newline if it exists from the httpVersion
+    // at this point, replace the newline if it exists
     chunkSizeChar[strcspn(chunkSizeChar, "\n")] = 0;
     chunkSizeChar[strcspn(chunkSizeChar, "\r")] = 0;
+    filename[strcspn(filename, "\n")] = 0;
+    filename[strcspn(filename, "\r")] = 0;
     *chunkSize = atoi(chunkSizeChar);
 }
 
@@ -193,6 +195,8 @@ void clientPutFile(char *path, char *buffer, int *socks, char *filename)
         // chunk 4 & 1 go to server 4
         sendChunk(socks[3], filename, 4, chunk4, lastChunkSize);
         sendChunk(socks[3], filename, 1, chunk1, chunkSize);
+
+        fclose(fp);
     }
     else
     {
