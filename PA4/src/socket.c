@@ -79,9 +79,10 @@ void writeToSocket(int sockfd, char *buffer, int size)
 
 void readFromSocket(int sockfd, char *buffer, int bytesToRead)
 {
+    // read bytesToRead from socket or the until socket is closed.
     int bytesRead = 0;
-    int chunk;
-    while (1)
+    int chunk = 1;
+    while (chunk > 0)
     {
         chunk = read(sockfd, buffer + bytesRead, bytesToRead - bytesRead);
         bytesRead += chunk;

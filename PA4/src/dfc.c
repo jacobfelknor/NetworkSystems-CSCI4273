@@ -73,6 +73,10 @@ int main(int argc, char **argv)
         char *chunk2 = (char *)malloc(BUFFER_SIZE);
         char *chunk3 = (char *)malloc(BUFFER_SIZE);
         char *chunk4 = (char *)malloc(BUFFER_SIZE);
+        bzero(chunk1, BUFFER_SIZE);
+        bzero(chunk2, BUFFER_SIZE);
+        bzero(chunk3, BUFFER_SIZE);
+        bzero(chunk4, BUFFER_SIZE);
         char *chunks[] = {chunk1, chunk2, chunk3, chunk4};
 
         // ask server 1
@@ -83,9 +87,12 @@ int main(int argc, char **argv)
             bzero(serverGetCMD, MAX_LEN);
             snprintf(serverGetCMD, MAX_LEN, "GET %s.%d\r\n", filename, i);
             writeToSocket(socks[0], serverGetCMD, strlen(serverGetCMD));
+            readFromSocket(socks[0], chunks[i - 1], 250);
+            printf("%s\n", chunks[i - 1]);
+            // close and reopen connection to make a new request
+            close(socks[0]);
+            socks[0] = get_socket(server, ports[0]);
         }
-        // readFromSocket(socks[0], chunks[0], BUFFER_SIZE);
-        printf("%s\n", chunks[0]);
         free(chunk1);
         free(chunk2);
         free(chunk3);
