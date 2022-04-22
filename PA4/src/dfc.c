@@ -78,6 +78,8 @@ int main(int argc, char **argv)
         bzero(chunk3, BUFFER_SIZE);
         bzero(chunk4, BUFFER_SIZE);
         char *chunks[] = {chunk1, chunk2, chunk3, chunk4};
+        bool chunkFound[] = {false, false, false, false};
+        bool fileComplete = true;
         int chunkSizes[] = {0, 0, 0, 0};
 
         // ask each server for each chunk, see what they return
@@ -105,6 +107,7 @@ int main(int argc, char **argv)
                 parseRequest(&serverCMD, cmd, tempFileName, &chunkSize);
                 if (strcmp(cmd, "OK") == 0)
                 {
+                    chunkFound[i - 1] = true;
                     chunkSizes[i - 1] = chunkSize;
                     readFromSocket(socks[j], chunks[i - 1], chunkSizes[i - 1]);
                 }
@@ -117,14 +120,29 @@ int main(int argc, char **argv)
             }
         }
 
-        // now write the file to disk
-        // TODO: instead of blindly writing, check if chunk is all NULL, meaning the file is incomplete
-        FILE *fp = fopen("recieved_file", "wb");
-        fwrite(chunk1, chunkSizes[0], 1, fp);
-        fwrite(chunk2, chunkSizes[1], 1, fp);
-        fwrite(chunk3, chunkSizes[2], 1, fp);
-        fwrite(chunk4, chunkSizes[3], 1, fp);
-        fclose(fp);
+        for (int i = 0; i < 4; i++)
+        {
+            if (!chunkFound[i])
+            {
+                fileComplete = false;
+            }
+        }
+        if (fileComplete)
+        {
+            // now write the file to disk
+            // TODO: instead of blindly writing, check if chunk is all NULL, meaning the file is incomplete
+            FILE *fp = fopen("recieved_file", "wb");
+            fwrite(chunk1, chunkSizes[0], 1, fp);
+            fwrite(chunk2, chunkSizes[1], 1, fp);
+            fwrite(chunk3, chunkSizes[2], 1, fp);
+            fwrite(chunk4, chunkSizes[3], 1, fp);
+            fclose(fp);
+        }
+        else
+        {
+            fprintf(stderr, "%s is incomplete\n", filenamecp);
+            exit(0);
+        }
 
         // free memory
         free(chunk1);
