@@ -135,9 +135,19 @@ int main(int argc, char **argv)
                     // if file found, we can write it to socket
                     // if its not found, the server will just fall
                     // through and close connection, returning nothing to client
-                    long fileSize = putFileInBuffer(response, BUFFER_SIZE, fp);
-                    writeToSocket(connfd, response, fileSize);
+                    chunkSize = getFileSize(fp);
+                    int n = snprintf(response, BUFFER_SIZE, "OK %s %d\r\n", filename, chunkSize);
+                    long fileSize = putFileInBuffer(response + n, BUFFER_SIZE - n, fp);
+                    writeToSocket(connfd, response, fileSize + n);
+                    printf("cmd: %s, path: %s, chunkSize: %d\n", cmd, path, chunkSize);
                 }
+                else
+                {
+                    printf("NOT FOUND: %s\n", path);
+                    writeToSocket(connfd, "ERROR NOT FOUND\r\n", strlen("ERROR NOT FOUND\r\n"));
+                }
+                free(response);
+                free(path);
             }
 
             // close the connection after request is serviced

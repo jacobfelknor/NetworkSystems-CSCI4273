@@ -78,24 +78,40 @@ int main(int argc, char **argv)
         bzero(chunk3, BUFFER_SIZE);
         bzero(chunk4, BUFFER_SIZE);
         char *chunks[] = {chunk1, chunk2, chunk3, chunk4};
+        int chunkSizes[] = {0, 0, 0, 0};
 
         // ask each server for each chunk, see what they return
-        int MAX_LEN = 1000;
-        char serverGetCMD[MAX_LEN];
+        int MAX_LEN = 100;
+        char *serverCMD = (char *)malloc(MAX_LEN);
+        char *serverCMDmemory = serverCMD;
+        char filenamecp[MAX_LEN];
+        bzero(filenamecp, MAX_LEN);
+        strcpy(filenamecp, filename);
         for (int j = 0; j < 4; j++)
         {
 
             for (int i = 1; i < 5; i++)
             {
-                bzero(serverGetCMD, MAX_LEN);
-                snprintf(serverGetCMD, MAX_LEN, "GET %s.%d\r\n", filename, i);
-                writeToSocket(socks[j], serverGetCMD, strlen(serverGetCMD));
+                bzero(serverCMD, MAX_LEN);
+                snprintf(serverCMD, MAX_LEN, "GET %s.%d\r\n", filenamecp, i);
+                writeToSocket(socks[j], serverCMD, strlen(serverCMD));
                 // TODO: I'm locking the chunksize returned at 250 because I know this file. GENERALIZE!!!!!!!!
                 // also, write to a temp buffer first. If the temp bytes are still null after
                 // reading, we know the server didn't have that file and so we shouldn't copy it to the chunk buffer
-                readFromSocket(socks[j], chunks[i - 1], 250);
+                bzero(serverCMD, MAX_LEN);
+                readLineFromSocket(socks[j], serverCMD, MAX_LEN);
+                char tempFileName[MAX_LEN]; // just need to give parseRequest something. We really just need the chunkSize
+                int chunkSize = 0;
+                parseRequest(&serverCMD, cmd, tempFileName, &chunkSize);
+                if (strcmp(cmd, "OK") == 0)
+                {
+                    chunkSizes[i - 1] = chunkSize;
+                    readFromSocket(socks[j], chunks[i - 1], chunkSizes[i - 1]);
+                }
                 // printf("%s\n", chunks[i - 1]);
                 // close and reopen connection to make a new request
+                serverCMD = serverCMDmemory;
+                bzero(serverCMDmemory, MAX_LEN);
                 close(socks[j]);
                 socks[j] = get_socket(server, ports[j]);
             }
@@ -104,10 +120,10 @@ int main(int argc, char **argv)
         // now write the file to disk
         // TODO: instead of blindly writing, check if chunk is all NULL, meaning the file is incomplete
         FILE *fp = fopen("recieved_file", "wb");
-        fwrite(chunk1, 250, 1, fp);
-        fwrite(chunk2, 250, 1, fp);
-        fwrite(chunk3, 250, 1, fp);
-        fwrite(chunk4, 250, 1, fp);
+        fwrite(chunk1, chunkSizes[0], 1, fp);
+        fwrite(chunk2, chunkSizes[1], 1, fp);
+        fwrite(chunk3, chunkSizes[2], 1, fp);
+        fwrite(chunk4, chunkSizes[3], 1, fp);
         fclose(fp);
 
         // free memory
@@ -115,6 +131,7 @@ int main(int argc, char **argv)
         free(chunk2);
         free(chunk3);
         free(chunk4);
+        free(serverCMDmemory);
     }
     else if (strcmp(cmd, "list") == 0)
     {
