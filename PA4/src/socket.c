@@ -61,7 +61,8 @@ int get_socket(char *hostname, int port)
     // connect
     if (connect(sockfd, (struct sockaddr *)&serveraddr, sizeof(struct sockaddr_in)) == -1)
     {
-        error("Error on connect");
+        // error("Error on connect");
+        return -1;
     }
 
     return sockfd;

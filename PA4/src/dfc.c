@@ -96,27 +96,31 @@ int main(int argc, char **argv)
             {
                 bzero(serverCMD, MAX_LEN);
                 snprintf(serverCMD, MAX_LEN, "GET %s.%d\r\n", filenamecp, i);
-                writeToSocket(socks[j], serverCMD, strlen(serverCMD));
-                // TODO: I'm locking the chunksize returned at 250 because I know this file. GENERALIZE!!!!!!!!
-                // also, write to a temp buffer first. If the temp bytes are still null after
-                // reading, we know the server didn't have that file and so we shouldn't copy it to the chunk buffer
-                bzero(serverCMD, MAX_LEN);
-                readLineFromSocket(socks[j], serverCMD, MAX_LEN);
-                char tempFileName[MAX_LEN]; // just need to give parseRequest something. We really just need the chunkSize
-                int chunkSize = 0;
-                parseRequest(&serverCMD, cmd, tempFileName, &chunkSize);
-                if (strcmp(cmd, "OK") == 0)
+                if (socks[j] != -1)
                 {
-                    chunkFound[i - 1] = true;
-                    chunkSizes[i - 1] = chunkSize;
-                    readFromSocket(socks[j], chunks[i - 1], chunkSizes[i - 1]);
+
+                    writeToSocket(socks[j], serverCMD, strlen(serverCMD));
+                    // TODO: I'm locking the chunksize returned at 250 because I know this file. GENERALIZE!!!!!!!!
+                    // also, write to a temp buffer first. If the temp bytes are still null after
+                    // reading, we know the server didn't have that file and so we shouldn't copy it to the chunk buffer
+                    bzero(serverCMD, MAX_LEN);
+                    readLineFromSocket(socks[j], serverCMD, MAX_LEN);
+                    char tempFileName[MAX_LEN]; // just need to give parseRequest something. We really just need the chunkSize
+                    int chunkSize = 0;
+                    parseRequest(&serverCMD, cmd, tempFileName, &chunkSize);
+                    if (strcmp(cmd, "OK") == 0)
+                    {
+                        chunkFound[i - 1] = true;
+                        chunkSizes[i - 1] = chunkSize;
+                        readFromSocket(socks[j], chunks[i - 1], chunkSizes[i - 1]);
+                    }
+                    // printf("%s\n", chunks[i - 1]);
+                    // close and reopen connection to make a new request
+                    serverCMD = serverCMDmemory;
+                    bzero(serverCMDmemory, MAX_LEN);
+                    close(socks[j]);
+                    socks[j] = get_socket(server, ports[j]);
                 }
-                // printf("%s\n", chunks[i - 1]);
-                // close and reopen connection to make a new request
-                serverCMD = serverCMDmemory;
-                bzero(serverCMDmemory, MAX_LEN);
-                close(socks[j]);
-                socks[j] = get_socket(server, ports[j]);
             }
         }
 
