@@ -221,6 +221,14 @@ void serverPutFile(int sockfd, char *request, char *cmd, char *dir, char *filena
 
 void clientPutFile(char *path, char *buffer, int *socks, char *filename)
 {
+    for (int i = 0; i < 4; i++)
+    {
+        if (socks[i] < 0)
+        {
+            fprintf(stderr, "%s put failed\n", filename);
+            exit(0);
+        }
+    }
     FILE *fp = fopen(path, "rb");
     if (fp != NULL)
     {
