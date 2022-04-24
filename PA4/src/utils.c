@@ -208,3 +208,131 @@ void clientPutFile(char *path, char *buffer, int *socks, char *filename)
         error("File could not be opened. DNE or insufficient permissions");
     }
 }
+
+void clientGetFile(char **servers, int *ports, int *socks, char *filename, char *cmd)
+{
+    // send a request GET filename\r\n
+    // sever will either respond with OK filename n\r\n<data>
+    // or will respond NOT FOUND\r\n or will timeout because its down.
+
+    // client stores each response from server in a buffer labeled for each chunk
+    // keep track if we have gotten a successful response and filled buffer for a certain chunk
+
+    // at the end, write buffers 1-4 out in order to a file
+    char *chunk1 = (char *)malloc(BUFFER_SIZE);
+    char *chunk2 = (char *)malloc(BUFFER_SIZE);
+    char *chunk3 = (char *)malloc(BUFFER_SIZE);
+    char *chunk4 = (char *)malloc(BUFFER_SIZE);
+    bzero(chunk1, BUFFER_SIZE);
+    bzero(chunk2, BUFFER_SIZE);
+    bzero(chunk3, BUFFER_SIZE);
+    bzero(chunk4, BUFFER_SIZE);
+    char *chunks[] = {chunk1, chunk2, chunk3, chunk4};
+    bool chunkFound[] = {false, false, false, false};
+    bool fileComplete = true;
+    int chunkSizes[] = {0, 0, 0, 0};
+
+    // ask each server for each chunk, see what they return
+    int MAX_LEN = 100;
+    char *cmdBuffer = (char *)malloc(MAX_LEN);
+    char *serverCMDmemory = cmdBuffer;
+    char filenamecp[MAX_LEN];
+    bzero(filenamecp, MAX_LEN);
+    strcpy(filenamecp, filename);
+    for (int j = 0; j < 4; j++)
+    {
+
+        for (int i = 1; i < 5; i++)
+        {
+            bzero(cmdBuffer, MAX_LEN);
+            snprintf(cmdBuffer, MAX_LEN, "GET %s.%d\r\n", filenamecp, i);
+            if (socks[j] != -1) // if the sock was -1, that means the server didn't accept the connection
+            {
+                // sends the request to the server. i.e GET README.1
+                writeToSocket(socks[j], cmdBuffer, strlen(cmdBuffer));
+                // also, write to a temp buffer first. If the temp bytes are still null after
+                // reading, we know the server didn't have that file and so we shouldn't copy it to the chunk buffer
+                bzero(cmdBuffer, MAX_LEN);
+                readLineFromSocket(socks[j], cmdBuffer, MAX_LEN);
+                char tempFileName[MAX_LEN]; // just need to give parseRequest something. We really just need the chunkSize
+                int chunkSize = 0;
+                parseRequest(&cmdBuffer, cmd, tempFileName, &chunkSize);
+                if (strcmp(cmd, "OK") == 0)
+                {
+                    // getting OK back from server means it was found!
+                    chunkFound[i - 1] = true;
+                    chunkSizes[i - 1] = chunkSize;
+                    readFromSocket(socks[j], chunks[i - 1], chunkSizes[i - 1]);
+                }
+                else
+                {
+                    // this means server returned NOT FOUND. we just skip it, try the next one
+                }
+                // close and reopen connection to make a new request. required since my server closes the connection
+                cmdBuffer = serverCMDmemory;
+                bzero(serverCMDmemory, MAX_LEN);
+                close(socks[j]);
+                socks[j] = get_socket(servers[j], ports[j]);
+            }
+        }
+    }
+
+    // check if the file is complete, meaning we got at least one server to respond to our request for that chunk.
+    for (int i = 0; i < 4; i++)
+    {
+        if (!chunkFound[i])
+        {
+            fileComplete = false;
+        }
+    }
+
+    if (fileComplete)
+    {
+        // now write the file to disk since we have all chunks
+        FILE *fp = fopen("recieved_file", "wb");
+        fwrite(chunk1, chunkSizes[0], 1, fp);
+        fwrite(chunk2, chunkSizes[1], 1, fp);
+        fwrite(chunk3, chunkSizes[2], 1, fp);
+        fwrite(chunk4, chunkSizes[3], 1, fp);
+        fclose(fp);
+    }
+    else
+    {
+        fprintf(stderr, "%s is incomplete\n", filenamecp);
+        exit(0);
+    }
+
+    // free memory
+    free(chunk1);
+    free(chunk2);
+    free(chunk3);
+    free(chunk4);
+    free(serverCMDmemory);
+}
+
+void serverGetFile(int connfd, char *dir, char *filename, char *cmd)
+{
+    // return the file if it exists, otherwise send back a NOT FOUND
+    int chunkSize = 0;
+    char *response = (char *)malloc(BUFFER_SIZE);
+    char *path = pathConcat(dir, filename);
+    FILE *fp = fopen(path, "rb");
+    if (fp != NULL)
+    {
+        // if file found, we can write it to socket
+        // if its not found, the server will just fall
+        // through and close connection, returning nothing to client
+        chunkSize = getFileSize(fp);
+        int n = snprintf(response, BUFFER_SIZE, "OK %s %d\r\n", filename, chunkSize);
+        long fileSize = putFileInBuffer(response + n, BUFFER_SIZE - n, fp);
+        writeToSocket(connfd, response, fileSize + n);
+        printf("cmd: %s, path: %s, chunkSize: %d\n", cmd, path, chunkSize);
+    }
+    else
+    {
+        printf("NOT FOUND: %s\n", path);
+        writeToSocket(connfd, "ERROR NOT FOUND\r\n", strlen("ERROR NOT FOUND\r\n"));
+    }
+    free(response);
+    free(path);
+}

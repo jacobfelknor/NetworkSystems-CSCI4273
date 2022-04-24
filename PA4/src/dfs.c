@@ -125,29 +125,9 @@ int main(int argc, char **argv)
             }
             else if (strcmp(cmd, "GET") == 0)
             {
-                // for get, we don't want to jump ahead
-                request = requestMemory;
-                char *response = (char *)malloc(BUFFER_SIZE);
-                char *path = pathConcat(dir, filename);
-                FILE *fp = fopen(path, "rb");
-                if (fp != NULL)
-                {
-                    // if file found, we can write it to socket
-                    // if its not found, the server will just fall
-                    // through and close connection, returning nothing to client
-                    chunkSize = getFileSize(fp);
-                    int n = snprintf(response, BUFFER_SIZE, "OK %s %d\r\n", filename, chunkSize);
-                    long fileSize = putFileInBuffer(response + n, BUFFER_SIZE - n, fp);
-                    writeToSocket(connfd, response, fileSize + n);
-                    printf("cmd: %s, path: %s, chunkSize: %d\n", cmd, path, chunkSize);
-                }
-                else
-                {
-                    printf("NOT FOUND: %s\n", path);
-                    writeToSocket(connfd, "ERROR NOT FOUND\r\n", strlen("ERROR NOT FOUND\r\n"));
-                }
-                free(response);
-                free(path);
+                // request = requestMemory;
+                // get command recieved from client
+                serverGetFile(connfd, dir, filename, cmd);
             }
 
             // close the connection after request is serviced
