@@ -97,7 +97,7 @@ void parseRequest(char **request, char *cmd, char *filename, int *chunkSize)
     {
         if (part > 2)
         {
-            // reached the end of available parts. If its not done, we can't parse this http request
+            // reached the end of available parts. If its not done, we can't parse this request
             break;
         }
         // adapted from includehelp.com/c-programs/c-program-to-split-string-by-space-into-words.aspx
@@ -120,6 +120,32 @@ void parseRequest(char **request, char *cmd, char *filename, int *chunkSize)
     filename[strcspn(filename, "\n")] = 0;
     filename[strcspn(filename, "\r")] = 0;
     *chunkSize = atoi(chunkSizeChar);
+}
+
+// adapted from https://stackoverflow.com/a/726214
+void splitHost(char *line, char *host, int *port)
+{
+    // we only care about the last item in this line. iterate backwards until a space
+    int lineLength = strlen(line);
+    char *ptr = line + lineLength;
+    for (int i = 0; i < lineLength; i++)
+    {
+        if (*ptr == ' ')
+        {
+            ptr += 1;
+            break;
+        }
+        ptr -= 1;
+    }
+    // extract port
+    sscanf(ptr, "%*[^:]:%d", port);
+    // truncate at :
+    ptr[strcspn(ptr, ":")] = 0;
+    // copy the host into given spot
+    for (int i = 0; i < strlen(ptr); i++)
+    {
+        host[i] = *(ptr + i);
+    }
 }
 
 // https://stackoverflow.com/a/8465083

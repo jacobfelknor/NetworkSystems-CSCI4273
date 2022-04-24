@@ -26,3 +26,4 @@ void serverPutFile(int sockfd, char *request, char *cmd, char *dir, char *filena
 void clientPutFile(char *path, char *buffer, int *socks, char *filename);
 void clientGetFile(char **servers, int *ports, int *socks, char *filename, char *cmd);
 void serverGetFile(int connfd, char *dir, char *filename, char *cmd);
+void splitHost(char *line, char *host, int *port);

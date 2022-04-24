@@ -42,8 +42,31 @@ int main(int argc, char **argv)
     }
 
     // TODO: read in dfc.conf, set up connections to servers
-    char *servers[] = {"localhost", "localhost", "localhost", "localhost"};
-    int ports[] = {8000, 8001, 8002, 8003};
+    int MAX_LEN = 100;
+    char *servers[] = {(char *)malloc(MAX_LEN), (char *)malloc(MAX_LEN), (char *)malloc(MAX_LEN), (char *)malloc(MAX_LEN)};
+    int ports[] = {0, 0, 0, 0};
+
+    // adapted from https://stackoverflow.com/a/9206332
+    // read in our conf file
+    FILE *fp = fopen("dfc.conf", "r");
+    if (fp != NULL)
+    {
+        char line[256];
+        for (int i = 0; i < 4; i++)
+        {
+            fgets(line, sizeof(line), fp);
+            char host[256];
+            int port;
+            splitHost(line, host, &port);
+            strcpy(servers[i], host);
+            ports[i] = port;
+        }
+    }
+    else
+    {
+        // use defaults provided in code, we couldn't read our conf file
+    }
+    fclose(fp);
 
     socks[0] = get_socket(servers[0], ports[0]);
     socks[1] = get_socket(servers[1], ports[1]);
@@ -74,4 +97,8 @@ int main(int argc, char **argv)
     close(socks[1]);
     close(socks[2]);
     close(socks[3]);
+    free(servers[0]);
+    free(servers[1]);
+    free(servers[2]);
+    free(servers[3]);
 }
