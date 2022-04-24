@@ -11,7 +11,7 @@ client: $(BIN)/dfc
 server: $(BIN)/dfs
 
 clean:
-	rm -f $(BIN)/*
+	rm -rf $(BIN)/* dfs*/
 
 $(BIN)/dfc: $(SRC)/dfc.c $(SRC)/utils.c $(SRC)/socket.c #$(SRC)/str_utils.c $(SRC)/forwarding.c
 	$(CC) $(CFLAGS) -I$(INCLUDE) $^ -o $@ -lcrypto -lssl -lz

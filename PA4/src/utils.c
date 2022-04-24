@@ -167,6 +167,28 @@ char *pathConcat(char *path1, char *path2)
     return result;
 }
 
+int hashMod4(char *filename)
+{
+    unsigned char digest[16];
+    char *digeststr = (char *)malloc(33); // 32 chars plus null term
+    bzero(digeststr, 33);
+    MD5_CTX ctx;
+    MD5_Init(&ctx);
+    MD5_Update(&ctx, filename, strlen(filename));
+    MD5_Final(digest, &ctx);
+    for (int i = 0, j = 0; i < 16; i++, j += 2)
+    {
+        sprintf(digeststr + j, "%02x", digest[i]);
+    }
+    // computes based on the last 16 bytes of the hash
+    // https://stackoverflow.com/a/11180162
+    size_t len = strlen(digeststr);
+    size_t offset = len < 16 ? 0 : len - 16;
+    unsigned long long hash_tail = strtoull((digeststr + offset), NULL, 16);
+    free(digeststr);
+    return hash_tail % 4;
+}
+
 void serverPutFile(int sockfd, char *request, char *cmd, char *dir, char *filename, int chunkSize)
 {
     // make the dir if needed
@@ -211,22 +233,20 @@ void clientPutFile(char *path, char *buffer, int *socks, char *filename)
         char *chunk3 = chunk2 + chunkSize;
         char *chunk4 = chunk3 + chunkSize;
 
+        int x = hashMod4(filename);
+
         // chunk 1 & 2 go to server 1
-        sendChunk(socks[0], filename, 1, chunk1, chunkSize);
-        sendChunk(socks[0], filename, 2, chunk2, chunkSize);
-
-        // chunk 2 & 3 go to server 2
-        sendChunk(socks[1], filename, 2, chunk2, chunkSize);
-        sendChunk(socks[1], filename, 3, chunk3, chunkSize);
-
-        // chunk 3 & 4 go to server 3
-        sendChunk(socks[2], filename, 3, chunk3, chunkSize);
-        sendChunk(socks[2], filename, 4, chunk4, lastChunkSize);
-
-        // chunk 4 & 1 go to server 4
-        sendChunk(socks[3], filename, 4, chunk4, lastChunkSize);
-        sendChunk(socks[3], filename, 1, chunk1, chunkSize);
-
+        sendChunk(socks[(0 + x) % 4], filename, 1, chunk1, chunkSize);
+        sendChunk(socks[(0 + x) % 4], filename, 2, chunk2, chunkSize);
+        // chunk 2 & 3 g(o+x)%4 to server 2
+        sendChunk(socks[(1 + x) % 4], filename, 2, chunk2, chunkSize);
+        sendChunk(socks[(1 + x) % 4], filename, 3, chunk3, chunkSize);
+        // chunk 3 & 4 g(o+x)%4 to server 3
+        sendChunk(socks[(2 + x) % 4], filename, 3, chunk3, chunkSize);
+        sendChunk(socks[(2 + x) % 4], filename, 4, chunk4, lastChunkSize);
+        // chunk 4 & 1 g(o+x)%4 to server 4
+        sendChunk(socks[(3 + x) % 4], filename, 4, chunk4, lastChunkSize);
+        sendChunk(socks[(3 + x) % 4], filename, 1, chunk1, chunkSize);
         fclose(fp);
     }
     else
@@ -315,7 +335,7 @@ void clientGetFile(char **servers, int *ports, int *socks, char *filename, char 
     if (fileComplete)
     {
         // now write the file to disk since we have all chunks
-        FILE *fp = fopen("recieved_file", "wb");
+        FILE *fp = fopen(filenamecp, "wb");
         fwrite(chunk1, chunkSizes[0], 1, fp);
         fwrite(chunk2, chunkSizes[1], 1, fp);
         fwrite(chunk3, chunkSizes[2], 1, fp);

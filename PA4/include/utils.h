@@ -11,6 +11,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <errno.h>
+#include <openssl/md5.h>
 
 #include "../include/socket.h"
 

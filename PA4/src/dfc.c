@@ -61,12 +61,8 @@ int main(int argc, char **argv)
             strcpy(servers[i], host);
             ports[i] = port;
         }
+        fclose(fp);
     }
-    else
-    {
-        // use defaults provided in code, we couldn't read our conf file
-    }
-    fclose(fp);
 
     socks[0] = get_socket(servers[0], ports[0]);
     socks[1] = get_socket(servers[1], ports[1]);
