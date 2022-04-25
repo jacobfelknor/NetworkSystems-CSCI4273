@@ -18,21 +18,4 @@ Assumptions:
     I've got a lot of hardcoded stuff assuming 4 servers. My code only
     handles this case
 
-Plan:
-    split file into 4 equal parts (with one having some remainder)
-    name them filename.ext.(1|2|3|4)
-
-    server looks a lot like webserver. Parse the request from user
-    and respond accordingly. Start with PUT
-
-    PUT filename.1 123\r\n  --> save the next 123 bytes to filename.1
-
-    to get.. ask each server for filename.1 until i get it back
-    ask each server for filename.2 until i get it back
-    etc.
-    if i can find all 4 parts, we're good! Reconstruct file and write to disk
-    if i can't, write the incomplete file to disk and warn the user
-
-    to list... ask each server in the same fashion as get. 
-    this time, the server will just respond with a binary yes/no instead of sending content
-    if i can find all 4 parts, list normal. else list incomplete
+    I require read/write permissions to the /tmp directory for my implementation

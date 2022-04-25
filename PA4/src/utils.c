@@ -472,7 +472,7 @@ void clientList(char **servers, int *ports, int *socks)
         }
         else if (count < 4)
         {
-            printf("%s <incomplete>\n", line);
+            printf("%s [incomplete]\n", line);
         }
     }
     fclose(fp);
