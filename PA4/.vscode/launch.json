@@ -24,9 +24,9 @@
                     "text": "-enable-pretty-printing",
                     "ignoreFailures": true,
                 },
-                {
-                    "text": "-gdb-set follow-fork-mode child"
-                }
+                // {
+                //     "text": "-gdb-set follow-fork-mode child"
+                // }
             ],
             "preLaunchTask": "build",
             "miDebuggerPath": "/usr/bin/gdb"

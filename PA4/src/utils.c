@@ -434,11 +434,53 @@ void clientList(char **servers, int *ports, int *socks)
     // for each filename in filenames
     //      count # of lines that start with
     //      if # == 4: complete else: incomplete
-    FILE *fp = fopen("/tmp/dfc_jacobfelknor", "wb");
-    putBufferInFile(response, BUFFER_SIZE, fp);
-    captureCmdOutput("sort -u /tmp/dfc_jacobfelknor | sed 's/\\.[^.]*$//' | sort -u", filenames, BUFFER_SIZE);
-    printf("%s\n", filenames);
 
+    // put all filenames in a file
+    FILE *fp = fopen("/tmp/dfc_all_filenames", "w");
+    putBufferInFile(response, strlen(response), fp);
+    fclose(fp);
+    fp = fopen("/tmp/dfc_sorted_filenames", "w");
+    captureCmdOutput("sort -u /tmp/dfc_all_filenames", filenames, BUFFER_SIZE);
+    putBufferInFile(filenames, strlen(filenames), fp);
+    fclose(fp);
+    // printf("%s\n", filenames);
+
+    // put base filenames in a file
+    fp = fopen("/tmp/dfc_base_filenames", "w");
+    captureCmdOutput("sort -u /tmp/dfc_sorted_filenames | sed 's/\\.[^.]*$//' | sort -u", filenames, BUFFER_SIZE);
+    putBufferInFile(filenames, strlen(filenames), fp);
+    // printf("%s\n", filenames);
+    fclose(fp);
+
+    // for each file in base filenames, check count in all filenames
+    fp = fopen("/tmp/dfc_base_filenames", "r");
+    char line[250];
+    char cmd[350];
+    char countChar[10];
+    int count;
+    bzero(countChar, 10);
+    bzero(cmd, 350);
+    while (fgets(line, sizeof(line), fp))
+    {
+        line[strcspn(line, "\n")] = 0;
+        sprintf(cmd, "sort -u /tmp/dfc_sorted_filenames | grep '^%s' | wc -l", line);
+        captureCmdOutput(cmd, countChar, 10);
+        count = atoi(countChar);
+        if (count == 4)
+        {
+            printf("%s\n", line);
+        }
+        else if (count < 4)
+        {
+            printf("%s <incomplete>\n", line);
+        }
+    }
+    fclose(fp);
+
+    // free memory and remove tmp files
+    remove("/tmp/dfc_base_filenames");
+    remove("/tmp/dfc_all_filenames");
+    remove("/tmp/dfc_sorted_filenames");
     free(filenames);
     free(cmdBuffer);
     free(response);
