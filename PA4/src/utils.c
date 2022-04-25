@@ -119,6 +119,8 @@ void parseRequest(char **request, char *cmd, char *filename, int *chunkSize)
     chunkSizeChar[strcspn(chunkSizeChar, "\r")] = 0;
     filename[strcspn(filename, "\n")] = 0;
     filename[strcspn(filename, "\r")] = 0;
+    cmd[strcspn(cmd, "\n")] = 0;
+    cmd[strcspn(cmd, "\r")] = 0;
     *chunkSize = atoi(chunkSizeChar);
 }
 
@@ -389,4 +391,66 @@ void serverGetFile(int connfd, char *dir, char *filename, char *cmd)
     }
     free(response);
     free(path);
+}
+
+void clientList(char **servers, int *ports, int *socks)
+{
+    // bool chunkFound[] = {false, false, false, false};
+    // bool fileComplete = true;
+
+    int MAX_LEN = 100;
+    char *cmdBuffer = (char *)malloc(MAX_LEN);
+    // char *serverCMDmemory = cmdBuffer;
+    char *response = (char *)malloc(BUFFER_SIZE);
+    // char *responseMemory = response;
+
+    // bzero(responseMemory, BUFFER_SIZE);
+    bzero(cmdBuffer, MAX_LEN);
+
+    writeToSocket(socks[0], "LIST\r\n", strlen("LIST\r\n"));
+    // if sock > 0
+    readFromSocket(socks[0], response, BUFFER_SIZE);
+    printf("%s\n", response);
+
+    // iterate over servers, ask them to list ls -1
+    // combine all answers into a file
+    // call sort -u /tmp/dfc_jacobfelknor, this gives unique lines
+
+    // give 1 occurance of each filename
+    // sort -u test | sed 's/\.[^.]*$//' | sort -u
+
+    // count # of lines that start with filename in /tmp/dfc_jacobfelknor
+    // sort -u test | grep '^filename' | wc -l
+
+    // for each filename in filenames
+    //      count # of lines that start with
+    //      if # == 4: complete else: incomplete
+}
+
+void captureCmdOutput(char *cmd, char *buf)
+{
+    FILE *fp;
+    // int status;
+    // char path[PATH_MAX];
+
+    fp = popen("ls", "r");
+    // if (fp != NULL)
+    // {
+    //     // clear buffer first, then store contents of ls
+    //     putFileInBuffer(buf, BUFFER_SIZE, fp);
+    //     fclose(fp);
+    // }
+    // else
+    // {
+    //     /* Handle error */;
+    //     error("cmd failed");
+    // }
+}
+
+void serverList(int connfd)
+{
+    char *cmdOutput = (char *)malloc(BUFFER_SIZE);
+    captureCmdOutput("ls", cmdOutput);
+    writeToSocket(connfd, cmdOutput, BUFFER_SIZE);
+    free(cmdOutput);
 }

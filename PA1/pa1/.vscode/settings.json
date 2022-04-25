@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "file_transfer.h": "c"
+        "file_transfer.h": "c",
+        "utils.h": "c",
+        "constants.h": "c"
     }
 }

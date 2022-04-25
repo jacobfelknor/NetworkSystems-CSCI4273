@@ -34,11 +34,15 @@ int main(int argc, char **argv)
     cmd = argv[1];
     // TODO: handle multiple files
     path = argv[2];
-    filename = strrchr(path, '/'); // want the base filename when uploading to the server
-    if (filename == NULL)
+    if (path != NULL)
     {
-        // path did not include '/'. The path is the filename (assuming the cwd)
-        filename = path;
+        // list command doesn't have a argv[2]
+        filename = strrchr(path, '/'); // want the base filename when uploading to the server
+        if (filename == NULL)
+        {
+            // path did not include '/'. The path is the filename (assuming the cwd)
+            filename = path;
+        }
     }
 
     // TODO: read in dfc.conf, set up connections to servers
@@ -82,6 +86,7 @@ int main(int argc, char **argv)
     else if (strcmp(cmd, "list") == 0)
     {
         // list files from server
+        clientList(servers, ports, socks);
     }
     else
     {

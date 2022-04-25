@@ -11,7 +11,12 @@ Usage:
     ./bin/dfs <directory> <port>
 
 Assumptions:
-    
+    md5 is a 128 bit value. Instead of trying to use an int that big, 
+    I stick with a 64 bit long long and take the last half of the md5
+    for hashing
+
+    I've got a lot of hardcoded stuff assuming 4 servers. My code only
+    handles this case
 
 Plan:
     split file into 4 equal parts (with one having some remainder)

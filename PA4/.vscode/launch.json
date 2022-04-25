@@ -10,8 +10,8 @@
             "request": "launch",
             "program": "${workspaceFolder}/bin/dfc",
             "args": [
-                "put",
-                "README"
+                "list",
+                // "README"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
