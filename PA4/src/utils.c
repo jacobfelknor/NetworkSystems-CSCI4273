@@ -397,20 +397,29 @@ void clientList(char **servers, int *ports, int *socks)
 {
     // bool chunkFound[] = {false, false, false, false};
     // bool fileComplete = true;
-
-    int MAX_LEN = 100;
-    char *cmdBuffer = (char *)malloc(MAX_LEN);
+    int j = 0;
+    char *cmdBuffer = (char *)malloc(BUFFER_SIZE);
+    char *filenames = (char *)malloc(BUFFER_SIZE);
     // char *serverCMDmemory = cmdBuffer;
     char *response = (char *)malloc(BUFFER_SIZE);
+    // char *allFiles = (char *)malloc(BUFFER_SIZE);
     // char *responseMemory = response;
 
-    // bzero(responseMemory, BUFFER_SIZE);
-    bzero(cmdBuffer, MAX_LEN);
+    bzero(response, BUFFER_SIZE);
+    // bzero(allFiles, BUFFER_SIZE);
+    bzero(cmdBuffer, BUFFER_SIZE);
 
-    writeToSocket(socks[0], "LIST\r\n", strlen("LIST\r\n"));
-    // if sock > 0
-    readFromSocket(socks[0], response, BUFFER_SIZE);
-    printf("%s\n", response);
+    for (int i = 0; i < 4; i++)
+    {
+
+        if (socks[i] > 0)
+        {
+
+            writeToSocket(socks[i], "LIST\r\n", strlen("LIST\r\n"));
+            readFromSocket(socks[i], response + j, BUFFER_SIZE - j);
+            j += strlen(response + j);
+        }
+    }
 
     // iterate over servers, ask them to list ls -1
     // combine all answers into a file
@@ -425,17 +434,23 @@ void clientList(char **servers, int *ports, int *socks)
     // for each filename in filenames
     //      count # of lines that start with
     //      if # == 4: complete else: incomplete
+    FILE *fp = fopen("/tmp/dfc_jacobfelknor", "wb");
+    putBufferInFile(response, BUFFER_SIZE, fp);
+    captureCmdOutput("sort -u /tmp/dfc_jacobfelknor | sed 's/\\.[^.]*$//' | sort -u", filenames, BUFFER_SIZE);
+    printf("%s\n", filenames);
+
+    free(filenames);
+    free(cmdBuffer);
+    free(response);
 }
 
-void captureCmdOutput(char *cmd, char *buf)
+void captureCmdOutput(char *cmd, char *buf, int bufsize)
 {
     FILE *fp;
-    // int status;
-    char line[PATH_MAX];
-
     fp = popen(cmd, "r");
     if (fp != NULL)
     {
+        bzero(buf, bufsize);
         char line[256];
         int i = 0;
         // can't use putFileInBuffer because we can't
@@ -450,10 +465,13 @@ void captureCmdOutput(char *cmd, char *buf)
     }
 }
 
-void serverList(int connfd)
+void serverList(int connfd, char *dir)
 {
     char *cmdOutput = (char *)malloc(BUFFER_SIZE);
-    captureCmdOutput("ls", cmdOutput);
+    char cmd[256];
+    mkdir(dir, 0775);
+    sprintf(cmd, "ls %s", dir);
+    captureCmdOutput(cmd, cmdOutput, BUFFER_SIZE);
     writeToSocket(connfd, cmdOutput, BUFFER_SIZE);
     free(cmdOutput);
 }

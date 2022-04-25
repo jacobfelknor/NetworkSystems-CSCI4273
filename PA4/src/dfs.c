@@ -96,52 +96,52 @@ int main(int argc, char **argv)
             error("server accept failed...\n");
         }
 
-        // if ((pid = fork()) == -1)
-        // {
-        //     close(connfd);
-        //     continue;
-        // }
-        // else if (pid > 0)
-        // {
-        //     // I'm the parent
-        //     close(connfd);            // child owns this connection now
-        //     signal(SIGCHLD, SIG_IGN); // ignore child's signal, reap automatically
-        //     continue;
-        // }
-        // else if (pid == 0)
-        // {
-        char cmd[100];
-        char filename[100];
-        int chunkSize;
-
-        // I'm the child. Service the request. Parse the first line to figure out where to start
-        request2buffer(connfd, request, BUFFER_SIZE);
-        parseRequest(&request, cmd, filename, &chunkSize);
-
-        if (strcmp(cmd, "PUT") == 0)
+        if ((pid = fork()) == -1)
         {
-            // put command recieved from client.
-            serverPutFile(connfd, request, cmd, dir, filename, chunkSize);
+            close(connfd);
+            continue;
         }
-        else if (strcmp(cmd, "GET") == 0)
+        else if (pid > 0)
         {
-            // request = requestMemory;
-            // get command recieved from client
-            serverGetFile(connfd, dir, filename, cmd);
+            // I'm the parent
+            close(connfd);            // child owns this connection now
+            signal(SIGCHLD, SIG_IGN); // ignore child's signal, reap automatically
+            continue;
         }
-        else if (strcmp(cmd, "LIST") == 0)
+        else if (pid == 0)
         {
-            printf("cmd: %s, filename: %s, chunkSize: %d\n", cmd, filename, chunkSize);
-            serverList(connfd);
+            char cmd[100];
+            char filename[100];
+            int chunkSize;
+
+            // I'm the child. Service the request. Parse the first line to figure out where to start
+            request2buffer(connfd, request, BUFFER_SIZE);
+            parseRequest(&request, cmd, filename, &chunkSize);
+
+            if (strcmp(cmd, "PUT") == 0)
+            {
+                // put command recieved from client.
+                serverPutFile(connfd, request, cmd, dir, filename, chunkSize);
+            }
+            else if (strcmp(cmd, "GET") == 0)
+            {
+                // request = requestMemory;
+                // get command recieved from client
+                serverGetFile(connfd, dir, filename, cmd);
+            }
+            else if (strcmp(cmd, "LIST") == 0)
+            {
+                printf("cmd: %s, filename: %s, chunkSize: %d\n", cmd, filename, chunkSize);
+                serverList(connfd, dir);
+            }
+
+            // close the connection after request is serviced
+            close(connfd);
+
+            // free memory
+            free(requestMemory);
+
+            break; // break out of the infinite loop and exit
         }
-
-        // close the connection after request is serviced
-        close(connfd);
-
-        // free memory
-        free(requestMemory);
-
-        break; // break out of the infinite loop and exit
-        // }
     }
 }
