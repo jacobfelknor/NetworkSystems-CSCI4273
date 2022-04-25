@@ -30,3 +30,4 @@ void serverGetFile(int connfd, char *dir, char *filename, char *cmd);
 void splitHost(char *line, char *host, int *port);
 void clientList(char **servers, int *ports, int *socks);
 void serverList(int connfd);
+void captureCmdOutput(char *cmd, char *buf);

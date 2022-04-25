@@ -431,20 +431,23 @@ void captureCmdOutput(char *cmd, char *buf)
 {
     FILE *fp;
     // int status;
-    // char path[PATH_MAX];
+    char line[PATH_MAX];
 
-    fp = popen("ls", "r");
-    // if (fp != NULL)
-    // {
-    //     // clear buffer first, then store contents of ls
-    //     putFileInBuffer(buf, BUFFER_SIZE, fp);
-    //     fclose(fp);
-    // }
-    // else
-    // {
-    //     /* Handle error */;
-    //     error("cmd failed");
-    // }
+    fp = popen(cmd, "r");
+    if (fp != NULL)
+    {
+        char line[256];
+        int i = 0;
+        // can't use putFileInBuffer because we can't
+        // seek on a PIPE
+        while (fgets(line, sizeof(line), fp))
+        {
+
+            strcpy(buf + i, line);
+            i += strlen(line);
+        }
+        fclose(fp);
+    }
 }
 
 void serverList(int connfd)
