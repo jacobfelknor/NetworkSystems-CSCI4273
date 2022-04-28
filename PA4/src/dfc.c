@@ -32,18 +32,6 @@ int main(int argc, char **argv)
     }
 
     cmd = argv[1];
-    // TODO: handle multiple files
-    path = argv[2];
-    if (path != NULL)
-    {
-        // list command doesn't have a argv[2]
-        filename = strrchr(path, '/'); // want the base filename when uploading to the server
-        if (filename == NULL)
-        {
-            // path did not include '/'. The path is the filename (assuming the cwd)
-            filename = path;
-        }
-    }
 
     // TODO: read in dfc.conf, set up connections to servers
     int MAX_LEN = 100;
@@ -68,36 +56,68 @@ int main(int argc, char **argv)
         fclose(fp);
     }
 
-    socks[0] = get_socket(servers[0], ports[0]);
-    socks[1] = get_socket(servers[1], ports[1]);
-    socks[2] = get_socket(servers[2], ports[2]);
-    socks[3] = get_socket(servers[3], ports[3]);
-
-    if (strcmp(cmd, "put") == 0)
+    int stop;
+    if (argc == 2)
     {
-        // put some file to servers
-        clientPutFile(path, buffer, socks, filename);
-    }
-    else if (strcmp(cmd, "get") == 0)
-    {
-        // get files from server
-        clientGetFile(servers, ports, socks, filename, cmd);
-    }
-    else if (strcmp(cmd, "list") == 0)
-    {
-        // list files from server
-        clientList(servers, ports, socks);
+        stop = 3;
     }
     else
     {
-        fprintf(stderr, "Invalid command '%s'. Must be 'put', 'get', or 'list'\n", cmd);
-        exit(0);
+        stop = argc;
     }
 
-    close(socks[0]);
-    close(socks[1]);
-    close(socks[2]);
-    close(socks[3]);
+    for (int i = 2; i < stop; i++)
+    {
+
+        // TODO: handle multiple files
+        path = argv[i];
+        if (path != NULL)
+        {
+            // list command doesn't have a argv[2]
+            filename = strrchr(path, '/'); // want the base filename when uploading to the server
+            if (filename == NULL)
+            {
+                // path did not include '/'. The path is the filename (assuming the cwd)
+                filename = path;
+            }
+        }
+
+        // make connections
+        socks[0] = get_socket(servers[0], ports[0]);
+        socks[1] = get_socket(servers[1], ports[1]);
+        socks[2] = get_socket(servers[2], ports[2]);
+        socks[3] = get_socket(servers[3], ports[3]);
+
+        // parse commands
+        if (strcmp(cmd, "put") == 0)
+        {
+            // put some file to servers
+            clientPutFile(path, buffer, socks, filename);
+        }
+        else if (strcmp(cmd, "get") == 0)
+        {
+            // get files from server
+            clientGetFile(servers, ports, socks, filename);
+        }
+        else if (strcmp(cmd, "list") == 0)
+        {
+            // list files from server
+            clientList(servers, ports, socks);
+        }
+        else
+        {
+            fprintf(stderr, "Invalid command '%s'. Must be 'put', 'get', or 'list'\n", cmd);
+            exit(0);
+        }
+
+        // close connections
+        close(socks[0]);
+        close(socks[1]);
+        close(socks[2]);
+        close(socks[3]);
+    }
+
+    // free allocated memory
     free(servers[0]);
     free(servers[1]);
     free(servers[2]);

@@ -25,7 +25,7 @@ void parseRequest(char **request, char *cmd, char *filename, int *chunkSize);
 char *pathConcat(char *s1, char *s2);
 void serverPutFile(int sockfd, char *request, char *cmd, char *dir, char *filename, int chunkSize);
 void clientPutFile(char *path, char *buffer, int *socks, char *filename);
-void clientGetFile(char **servers, int *ports, int *socks, char *filename, char *cmd);
+void clientGetFile(char **servers, int *ports, int *socks, char *filename);
 void serverGetFile(int connfd, char *dir, char *filename, char *cmd);
 void splitHost(char *line, char *host, int *port);
 void clientList(char **servers, int *ports, int *socks);

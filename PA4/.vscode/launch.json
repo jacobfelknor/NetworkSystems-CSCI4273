@@ -10,8 +10,10 @@
             "request": "launch",
             "program": "${workspaceFolder}/bin/dfc",
             "args": [
-                "list",
-                // "README"
+                "get",
+                "socket.c",
+                "tasks.json",
+                "ls",
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

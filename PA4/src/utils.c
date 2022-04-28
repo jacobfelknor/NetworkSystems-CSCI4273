@@ -265,7 +265,7 @@ void clientPutFile(char *path, char *buffer, int *socks, char *filename)
     }
 }
 
-void clientGetFile(char **servers, int *ports, int *socks, char *filename, char *cmd)
+void clientGetFile(char **servers, int *ports, int *socks, char *filename)
 {
     // send a request GET filename\r\n
     // sever will either respond with OK filename n\r\n<data>
@@ -311,9 +311,10 @@ void clientGetFile(char **servers, int *ports, int *socks, char *filename, char 
                 bzero(cmdBuffer, MAX_LEN);
                 readLineFromSocket(socks[j], cmdBuffer, MAX_LEN);
                 char tempFileName[MAX_LEN]; // just need to give parseRequest something. We really just need the chunkSize
+                char tempcmd[MAX_LEN];
                 int chunkSize = 0;
-                parseRequest(&cmdBuffer, cmd, tempFileName, &chunkSize);
-                if (strcmp(cmd, "OK") == 0)
+                parseRequest(&cmdBuffer, tempcmd, tempFileName, &chunkSize);
+                if (strcmp(tempcmd, "OK") == 0)
                 {
                     // getting OK back from server means it was found!
                     chunkFound[i - 1] = true;
