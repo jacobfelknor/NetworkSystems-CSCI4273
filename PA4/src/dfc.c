@@ -23,6 +23,8 @@ int main(int argc, char **argv)
     char *path;
     char *filename;
     char buffer[BUFFER_SIZE];
+    char *home = getenv("HOME");
+    char *dfcpath;
 
     /* check command line arguments */
     if (argc < 2)
@@ -41,6 +43,12 @@ int main(int argc, char **argv)
     // adapted from https://stackoverflow.com/a/9206332
     // read in our conf file
     FILE *fp = fopen("dfc.conf", "r");
+    if (fp == NULL)
+    {
+        dfcpath = pathConcat(home, "dfc.conf");
+        fp = fopen(dfcpath, "r");
+        free(dfcpath);
+    }
     if (fp != NULL)
     {
         char line[256];
